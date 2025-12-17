@@ -8,9 +8,22 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
-    "chat": "tsx src/interfaces/console.ts"
+    "chat": "tsx src/interfaces/console.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src tests --ext .ts",
+    "lint:fix": "eslint src tests --ext .ts --fix",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\""
   },
-  "keywords": ["ai", "personality", "memory", "ollama", "local"],
+  "keywords": [
+    "ai",
+    "personality",
+    "memory",
+    "ollama",
+    "local"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
@@ -24,7 +37,14 @@
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.10.2",
     "@types/uuid": "^10.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.50.0",
+    "@typescript-eslint/parser": "^8.50.0",
+    "@vitest/coverage-v8": "^4.0.16",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.7.4",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^4.0.16"
   }
 }

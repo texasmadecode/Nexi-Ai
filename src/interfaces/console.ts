@@ -82,101 +82,82 @@ async function handleCommand(input: string): Promise<boolean> {
 
 async function chat(input: string): Promise<void> {
   try {
-    process.stdout.write(chalk.magenta('\nNexi: '));
-
-    // Stream tokens as they arrive
+    process.stdout.write(magenta('\nNexi: '));
     await nexi.chat(input, {
       stream: true,
-      onToken: (token: string) => {
-        process.stdout.write(chalk.white(token));
-      },
+      onToken: (token: string) => process.stdout.write(white(token)),
     });
-
-    console.log('\n');
-  } catch (error: any) {
-    console.error(chalk.red(`\nError: ${error.message}\n`));
+    log('\n');
+  } catch (e: any) {
+    log(red(`\nError: ${e.message}\n`));
   }
 }
 
 async function checkOllama(): Promise<boolean> {
-  const available = await nexi.isProviderAvailable();
-  if (!available) {
-    console.error(chalk.red('\n✗ Cannot connect to Ollama at ' + (process.env.OLLAMA_HOST || 'http://localhost:11434')));
-    console.error(chalk.yellow('\nMake sure Ollama is running:'));
-    console.error(chalk.white('  1. Install Ollama: https://ollama.ai'));
-    console.error(chalk.white('  2. Start Ollama: ollama serve'));
-    console.error(chalk.white('  3. Pull a model: ollama pull llama3.1:8b\n'));
+  if (!(await nexi.isProviderAvailable())) {
+    log(red('\n✗ Cannot connect to Ollama at ' + (process.env.OLLAMA_HOST || 'http://localhost:11434')));
+    log(yellow('\nMake sure Ollama is running:'));
+    log(white('  1. Install: https://ollama.ai'));
+    log(white('  2. Start: ollama serve'));
+    log(white('  3. Pull model: ollama pull llama3.1:8b\n'));
     return false;
   }
   return true;
 }
 
 async function main(): Promise<void> {
-  displayHeader();
+  showHeader();
 
-  // Check Ollama connection
   if (!(await checkOllama())) {
     process.exit(1);
   }
 
-  console.log(chalk.green('✓ Connected to Ollama\n'));
-  displayState();
-  console.log('');
+  log(green('✓ Connected to Ollama\n'));
+  showState();
+  log('');
 
-  // Initial greeting with streaming
   try {
-    process.stdout.write(chalk.magenta('Nexi: '));
+    process.stdout.write(magenta('Nexi: '));
     await nexi.chat('*session starts*', {
       stream: true,
-      onToken: (token: string) => {
-        process.stdout.write(chalk.white(token));
-      },
+      onToken: (token: string) => process.stdout.write(white(token)),
     });
-    console.log('\n');
-  } catch (error: any) {
-    console.log(chalk.gray('(Nexi is waking up...)\n'));
+    log('\n');
+  } catch {
+    log(gray('(Nexi is waking up...)\n'));
   }
 
-  const prompt = (): void => {
-    displayState();
-    rl.question(chalk.green('You: '), async (input) => {
-      const trimmedInput = input.trim();
+  const loop = (): void => {
+    showState();
+    rl.question(green('You: '), async (input) => {
+      const trimmed = input.trim();
+      if (!trimmed) { loop(); return; }
 
-      if (!trimmedInput) {
-        prompt();
-        return;
-      }
-
-      // Handle commands
-      if (trimmedInput.startsWith('/')) {
-        const shouldContinue = await handleCommand(trimmedInput);
-        if (!shouldContinue) {
-          console.log(chalk.cyan('\nGoodbye! Nexi will remember this conversation.\n'));
+      if (trimmed.startsWith('/')) {
+        if (!(await handleCommand(trimmed))) {
+          log(cyan('\nGoodbye! Nexi will remember this conversation.\n'));
           await nexi.processMemories();
           nexi.shutdown();
           rl.close();
           process.exit(0);
         }
-        prompt();
+        loop();
         return;
       }
 
-      // Regular chat with streaming
-      await chat(trimmedInput);
-      prompt();
+      await chat(trimmed);
+      loop();
     });
   };
 
-  prompt();
+  loop();
 }
 
-// Handle graceful shutdown
 process.on('SIGINT', async () => {
-  console.log(chalk.cyan('\n\nShutting down gracefully...'));
+  log(cyan('\n\nShutting down...'));
   await nexi.processMemories();
   nexi.shutdown();
   process.exit(0);
 });
 
-// Run
 main().catch(console.error);
