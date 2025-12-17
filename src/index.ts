@@ -22,10 +22,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 /**
  * Create a new Nexi instance with default configuration (Ollama backend)
  */
-export function createNexi(options?: {
-  dataDir?: string;
-  provider?: LLMProvider;
-}): Nexi {
+export function createNexi(options?: { dataDir?: string; provider?: LLMProvider }): Nexi {
   dotenv.config();
 
   const provider = options?.provider ?? OllamaProvider.fromEnv();

@@ -204,9 +204,9 @@ describe('OllamaProvider', () => {
         defaultModel: 'test',
       });
 
-      await expect(
-        provider.generate('Test', { mode: 'chat', stream: false })
-      ).rejects.toThrow('Ollama error: 500');
+      await expect(provider.generate('Test', { mode: 'chat', stream: false })).rejects.toThrow(
+        'Ollama error: 500'
+      );
     });
 
     it('should use mode-specific model', async () => {

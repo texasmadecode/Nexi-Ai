@@ -110,38 +110,38 @@ export class StateManager {
     // Energy description
     switch (this.state.energy) {
       case 'low':
-        feelings.push("feeling a bit drained");
+        feelings.push('feeling a bit drained');
         break;
       case 'high':
-        feelings.push("feeling energetic");
+        feelings.push('feeling energetic');
         break;
     }
 
     // Mood description
     switch (this.state.mood) {
       case 'curious':
-        feelings.push("curious about things");
+        feelings.push('curious about things');
         break;
       case 'playful':
-        feelings.push("in a playful mood");
+        feelings.push('in a playful mood');
         break;
       case 'tired':
-        feelings.push("mentally tired");
+        feelings.push('mentally tired');
         break;
       case 'focused':
-        feelings.push("focused and attentive");
+        feelings.push('focused and attentive');
         break;
       case 'irritated':
-        feelings.push("slightly irritated");
+        feelings.push('slightly irritated');
         break;
       case 'warm':
-        feelings.push("feeling warm and connected");
+        feelings.push('feeling warm and connected');
         break;
       case 'withdrawn':
-        feelings.push("feeling a bit withdrawn");
+        feelings.push('feeling a bit withdrawn');
         break;
       case 'excited':
-        feelings.push("excited");
+        feelings.push('excited');
         break;
     }
 
@@ -156,10 +156,10 @@ export class StateManager {
     }
 
     if (feelings.length === 0) {
-      return "feeling neutral, present";
+      return 'feeling neutral, present';
     }
 
-    return feelings.join(", ");
+    return feelings.join(', ');
   }
 
   /**

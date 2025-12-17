@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { detectMode, getModeConfig, getModeName, parseModeCommand, MODE_CONFIGS } from '../src/core/modes.js';
+import {
+  detectMode,
+  getModeConfig,
+  getModeName,
+  parseModeCommand,
+  MODE_CONFIGS,
+} from '../src/core/modes.js';
 
 describe('Mode System', () => {
   describe('MODE_CONFIGS', () => {

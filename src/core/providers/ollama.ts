@@ -37,7 +37,7 @@ export class OllamaProvider implements LLMProvider {
     const envChat = process.env.NEXI_MODEL_CHAT;
     const envThink = process.env.NEXI_MODEL_THINK;
     const envOffline = process.env.NEXI_MODEL_OFFLINE;
-    
+
     if (envReact) modelOverrides.react = envReact;
     if (envChat) modelOverrides.chat = envChat;
     if (envThink) modelOverrides.think = envThink;
@@ -113,7 +113,9 @@ export class OllamaProvider implements LLMProvider {
               chunks.push(data.response);
               onToken?.(data.response);
             }
-          } catch { /* skip */ }
+          } catch {
+            /* skip */
+          }
         }
       }
 
@@ -124,7 +126,9 @@ export class OllamaProvider implements LLMProvider {
             chunks.push(data.response);
             onToken?.(data.response);
           }
-        } catch { /* skip */ }
+        } catch {
+          /* skip */
+        }
       }
     } finally {
       reader.releaseLock();

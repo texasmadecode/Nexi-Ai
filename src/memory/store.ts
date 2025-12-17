@@ -126,9 +126,9 @@ export class MemoryStore {
 
     if (query.tags && query.tags.length > 0) {
       // SQLite JSON search
-      const tagConditions = query.tags.map(() => "tags LIKE ?").join(' OR ');
+      const tagConditions = query.tags.map(() => 'tags LIKE ?').join(' OR ');
       sql += ` AND (${tagConditions})`;
-      query.tags.forEach(tag => params.push(`%"${tag}"%`));
+      query.tags.forEach((tag) => params.push(`%"${tag}"%`));
     }
 
     sql += ' ORDER BY importance DESC, last_accessed DESC';
@@ -147,7 +147,7 @@ export class MemoryStore {
     `);
 
     const now = new Date().toISOString();
-    return rows.map(row => {
+    return rows.map((row) => {
       updateStmt.run(now, row.id);
       return this.rowToMemory(row);
     });
@@ -159,10 +159,11 @@ export class MemoryStore {
    */
   findRelevant(text: string, limit: number = 5): Memory[] {
     // Extract keywords (simple approach - can be improved)
-    const words = text.toLowerCase()
+    const words = text
+      .toLowerCase()
       .replace(/[^\w\s]/g, '')
       .split(/\s+/)
-      .filter(w => w.length > 3);
+      .filter((w) => w.length > 3);
 
     if (words.length === 0) {
       // Return recent important memories if no keywords
@@ -170,9 +171,11 @@ export class MemoryStore {
     }
 
     // Search for memories matching any keyword
-    const conditions = words.map(() => '(LOWER(content) LIKE ? OR LOWER(context) LIKE ?)').join(' OR ');
+    const conditions = words
+      .map(() => '(LOWER(content) LIKE ? OR LOWER(context) LIKE ?)')
+      .join(' OR ');
     const params: string[] = [];
-    words.forEach(word => {
+    words.forEach((word) => {
       params.push(`%${word}%`, `%${word}%`);
     });
 
@@ -188,7 +191,7 @@ export class MemoryStore {
     const stmt = this.db.prepare(sql);
     const rows = stmt.all(...params, limit) as any[];
 
-    return rows.map(row => this.rowToMemory(row));
+    return rows.map((row) => this.rowToMemory(row));
   }
 
   /**
@@ -212,7 +215,12 @@ export class MemoryStore {
   /**
    * Update an existing memory
    */
-  update(id: string, updates: Partial<Pick<Memory, 'content' | 'context' | 'importance' | 'emotional_weight' | 'tags'>>): boolean {
+  update(
+    id: string,
+    updates: Partial<
+      Pick<Memory, 'content' | 'context' | 'importance' | 'emotional_weight' | 'tags'>
+    >
+  ): boolean {
     const setClauses: string[] = [];
     const params: any[] = [];
 
@@ -261,12 +269,16 @@ export class MemoryStore {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - daysOld);
 
-    const result = this.db.prepare(`
+    const result = this.db
+      .prepare(
+        `
       DELETE FROM memories
       WHERE last_accessed < ?
         AND importance <= ?
         AND type NOT IN ('milestone', 'request')
-    `).run(cutoffDate.toISOString(), maxImportance);
+    `
+      )
+      .run(cutoffDate.toISOString(), maxImportance);
 
     return result.changes;
   }
@@ -299,12 +311,16 @@ export class MemoryStore {
   getStats(): { total: number; byType: Record<string, number>; avgImportance: number } {
     const total = (this.db.prepare('SELECT COUNT(*) as count FROM memories').get() as any).count;
 
-    const byTypeRows = this.db.prepare(`
+    const byTypeRows = this.db
+      .prepare(
+        `
       SELECT type, COUNT(*) as count FROM memories GROUP BY type
-    `).all() as { type: string; count: number }[];
+    `
+      )
+      .all() as { type: string; count: number }[];
 
     const byType: Record<string, number> = {};
-    byTypeRows.forEach(row => {
+    byTypeRows.forEach((row) => {
       byType[row.type] = row.count;
     });
 

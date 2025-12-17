@@ -74,7 +74,9 @@ export class Nexi {
 
     // Build conversation context efficiently
     const contextMsgs = this.conversationHistory.slice(-this.config.maxContextMessages);
-    const context = contextMsgs.map(m => (m.role === 'user' ? 'User: ' : 'Nexi: ') + m.content).join('\n\n');
+    const context = contextMsgs
+      .map((m) => (m.role === 'user' ? 'User: ' : 'Nexi: ') + m.content)
+      .join('\n\n');
     const fullPrompt = systemPrompt + '\n\n---\n\nConversation:\n' + context + '\n\nNexi:';
 
     const params = MODE_PARAMS[state.mode];
@@ -104,10 +106,13 @@ export class Nexi {
     if (this.conversationHistory.length < 2) return [];
 
     const recent = this.conversationHistory.slice(-10);
-    const convo = recent.map(m => (m.role === 'user' ? 'User: ' : 'Nexi: ') + m.content).join('\n\n');
+    const convo = recent
+      .map((m) => (m.role === 'user' ? 'User: ' : 'Nexi: ') + m.content)
+      .join('\n\n');
 
     try {
-      const prompt = 'You are a memory extraction system. Respond only with valid JSON.\n\n' +
+      const prompt =
+        'You are a memory extraction system. Respond only with valid JSON.\n\n' +
         buildMemoryExtractionPrompt(convo);
 
       const text = await this.provider.generate(prompt, {
@@ -124,13 +129,15 @@ export class Nexi {
       const memories: Memory[] = [];
 
       for (const m of extracted.memories || []) {
-        memories.push(this.memoryStore.store({
-          type: m.type as MemoryType,
-          content: m.content,
-          importance: m.importance,
-          emotional_weight: m.emotional_weight,
-          tags: m.tags || [],
-        }));
+        memories.push(
+          this.memoryStore.store({
+            type: m.type as MemoryType,
+            content: m.content,
+            importance: m.importance,
+            emotional_weight: m.emotional_weight,
+            tags: m.tags || [],
+          })
+        );
       }
 
       return memories;

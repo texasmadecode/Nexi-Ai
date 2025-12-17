@@ -40,7 +40,7 @@ describe('MemoryStore', () => {
     });
 
     it('should store memories with different types', () => {
-      const types = ['fact', 'preference', 'milestone', 'request', 'meta'] as const;
+      const types = ['fact', 'preference', 'milestone', 'request', 'reflection'] as const;
 
       for (const type of types) {
         const memory = store.store({
@@ -102,22 +102,46 @@ describe('MemoryStore', () => {
 
   describe('query', () => {
     beforeEach(() => {
-      store.store({ type: 'fact', content: 'Fact 1', importance: 3, emotional_weight: 0, tags: ['a'] });
-      store.store({ type: 'fact', content: 'Fact 2', importance: 7, emotional_weight: 0, tags: ['b'] });
-      store.store({ type: 'preference', content: 'Pref 1', importance: 5, emotional_weight: 0, tags: ['a'] });
-      store.store({ type: 'milestone', content: 'Milestone 1', importance: 9, emotional_weight: 2, tags: ['c'] });
+      store.store({
+        type: 'fact',
+        content: 'Fact 1',
+        importance: 3,
+        emotional_weight: 0,
+        tags: ['a'],
+      });
+      store.store({
+        type: 'fact',
+        content: 'Fact 2',
+        importance: 7,
+        emotional_weight: 0,
+        tags: ['b'],
+      });
+      store.store({
+        type: 'preference',
+        content: 'Pref 1',
+        importance: 5,
+        emotional_weight: 0,
+        tags: ['a'],
+      });
+      store.store({
+        type: 'milestone',
+        content: 'Milestone 1',
+        importance: 9,
+        emotional_weight: 2,
+        tags: ['c'],
+      });
     });
 
     it('should filter by type', () => {
       const facts = store.query({ type: 'fact' });
       expect(facts.length).toBe(2);
-      expect(facts.every(m => m.type === 'fact')).toBe(true);
+      expect(facts.every((m) => m.type === 'fact')).toBe(true);
     });
 
     it('should filter by minimum importance', () => {
       const important = store.query({ minImportance: 6 });
       expect(important.length).toBe(2);
-      expect(important.every(m => m.importance >= 6)).toBe(true);
+      expect(important.every((m) => m.importance >= 6)).toBe(true);
     });
 
     it('should search by content', () => {
@@ -143,15 +167,33 @@ describe('MemoryStore', () => {
 
   describe('findRelevant', () => {
     beforeEach(() => {
-      store.store({ type: 'fact', content: 'The user loves programming', importance: 5, emotional_weight: 0, tags: [] });
-      store.store({ type: 'preference', content: 'User prefers dark theme', importance: 6, emotional_weight: 0, tags: [] });
-      store.store({ type: 'fact', content: 'User works on TypeScript projects', importance: 7, emotional_weight: 0, tags: [] });
+      store.store({
+        type: 'fact',
+        content: 'The user loves programming',
+        importance: 5,
+        emotional_weight: 0,
+        tags: [],
+      });
+      store.store({
+        type: 'preference',
+        content: 'User prefers dark theme',
+        importance: 6,
+        emotional_weight: 0,
+        tags: [],
+      });
+      store.store({
+        type: 'fact',
+        content: 'User works on TypeScript projects',
+        importance: 7,
+        emotional_weight: 0,
+        tags: [],
+      });
     });
 
     it('should find memories matching keywords', () => {
       const results = store.findRelevant('programming TypeScript', 5);
       expect(results.length).toBeGreaterThan(0);
-      expect(results.some(m => m.content.includes('programming'))).toBe(true);
+      expect(results.some((m) => m.content.includes('programming'))).toBe(true);
     });
 
     it('should return important memories when no keywords match', () => {
@@ -161,7 +203,13 @@ describe('MemoryStore', () => {
     });
 
     it('should respect limit parameter', () => {
-      store.store({ type: 'fact', content: 'More programming info', importance: 5, emotional_weight: 0, tags: [] });
+      store.store({
+        type: 'fact',
+        content: 'More programming info',
+        importance: 5,
+        emotional_weight: 0,
+        tags: [],
+      });
       const results = store.findRelevant('programming', 1);
       expect(results.length).toBeLessThanOrEqual(1);
     });
@@ -270,9 +318,9 @@ describe('MemoryStore', () => {
       oldDate.setDate(oldDate.getDate() - 60); // 60 days ago
 
       // Direct DB update for testing
-      store['db'].prepare(
-        'UPDATE memories SET last_accessed = ? WHERE id = ?'
-      ).run(oldDate.toISOString(), memory.id);
+      store['db']
+        .prepare('UPDATE memories SET last_accessed = ? WHERE id = ?')
+        .run(oldDate.toISOString(), memory.id);
 
       const decayed = store.decay(30, 3);
       expect(decayed).toBe(1);
@@ -293,9 +341,9 @@ describe('MemoryStore', () => {
       const oldDate = new Date();
       oldDate.setDate(oldDate.getDate() - 60);
 
-      store['db'].prepare(
-        'UPDATE memories SET last_accessed = ? WHERE id = ?'
-      ).run(oldDate.toISOString(), memory.id);
+      store['db']
+        .prepare('UPDATE memories SET last_accessed = ? WHERE id = ?')
+        .run(oldDate.toISOString(), memory.id);
 
       const decayed = store.decay(30, 3);
       expect(decayed).toBe(0);
@@ -316,9 +364,9 @@ describe('MemoryStore', () => {
       const oldDate = new Date();
       oldDate.setDate(oldDate.getDate() - 60);
 
-      store['db'].prepare(
-        'UPDATE memories SET last_accessed = ? WHERE id = ?'
-      ).run(oldDate.toISOString(), memory.id);
+      store['db']
+        .prepare('UPDATE memories SET last_accessed = ? WHERE id = ?')
+        .run(oldDate.toISOString(), memory.id);
 
       const decayed = store.decay(30, 3);
       expect(decayed).toBe(0);
@@ -352,7 +400,13 @@ describe('MemoryStore', () => {
     it('should return correct statistics', () => {
       store.store({ type: 'fact', content: 'F1', importance: 5, emotional_weight: 0, tags: [] });
       store.store({ type: 'fact', content: 'F2', importance: 7, emotional_weight: 0, tags: [] });
-      store.store({ type: 'preference', content: 'P1', importance: 3, emotional_weight: 0, tags: [] });
+      store.store({
+        type: 'preference',
+        content: 'P1',
+        importance: 3,
+        emotional_weight: 0,
+        tags: [],
+      });
 
       const stats = store.getStats();
 

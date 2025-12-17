@@ -81,7 +81,7 @@ export function detectMode(input: string, currentMode: BehavioralMode): Behavior
     'plan',
   ];
 
-  if (thinkIndicators.some(indicator => lowerInput.includes(indicator))) {
+  if (thinkIndicators.some((indicator) => lowerInput.includes(indicator))) {
     return 'think';
   }
 
@@ -106,7 +106,10 @@ export function getModeName(mode: BehavioralMode): string {
 /**
  * Parse mode command from input and return cleaned input
  */
-export function parseModeCommand(input: string): { mode: BehavioralMode | null; cleanedInput: string } {
+export function parseModeCommand(input: string): {
+  mode: BehavioralMode | null;
+  cleanedInput: string;
+} {
   const modeCommands: Record<string, BehavioralMode> = {
     '/react': 'react',
     '/quick': 'react',

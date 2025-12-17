@@ -39,13 +39,13 @@ export interface Memory {
 }
 
 export type MemoryType =
-  | 'preference'      // "likes X", "dislikes Y"
-  | 'fact'            // learned information about user/world
-  | 'event'           // something that happened
-  | 'milestone'       // relationship milestone
-  | 'reflection'      // Nexi's own thoughts
-  | 'request'         // user explicitly asked to remember something
-  | 'pattern';        // recurring theme noticed
+  | 'preference' // "likes X", "dislikes Y"
+  | 'fact' // learned information about user/world
+  | 'event' // something that happened
+  | 'milestone' // relationship milestone
+  | 'reflection' // Nexi's own thoughts
+  | 'request' // user explicitly asked to remember something
+  | 'pattern'; // recurring theme noticed
 
 export interface ConversationMessage {
   role: 'user' | 'assistant';
