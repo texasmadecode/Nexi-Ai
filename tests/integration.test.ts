@@ -195,32 +195,70 @@ describe('Nexi with real-like scenarios', () => {
     }
   });
 
-  it('should handle a typical conversation flow', async () => {
+  it('should handle a typical conversation flow and print results', async () => {
+    console.log('\n' + '='.repeat(50));
+    console.log('🤖 NEXI AI - Integration Test Conversation');
+    console.log('='.repeat(50) + '\n');
+
     // First message
     const response1 = await nexi.chat('Hello!');
+    console.log('You: Hello!');
+    console.log(`Nexi: ${response1}\n`);
     expect(response1).toBeDefined();
     expect(response1.length).toBeGreaterThan(0);
 
     // Second message
     const response2 = await nexi.chat('How are you today?');
+    console.log('You: How are you today?');
+    console.log(`Nexi: ${response2}\n`);
     expect(response2).toBeDefined();
 
     // Remember something
     nexi.remember('User is working on a TypeScript project');
+    console.log('📝 /remember User is working on a TypeScript project');
+    console.log('✓ Remembered\n');
 
     // Third message
     const response3 = await nexi.chat('Tell me something');
+    console.log('You: Tell me something');
+    console.log(`Nexi: ${response3}\n`);
     expect(response3).toBeDefined();
 
-    // Check state - should have 3 interactions
-    const state = nexi.getState();
-    expect(state.interactionCount).toBe(3);
-
-    // Check conversation history - 3 user + 3 assistant = 6
+    // Print conversation history
+    console.log('-'.repeat(50));
+    console.log('📜 Conversation History:');
+    console.log('-'.repeat(50));
     const history = nexi.getConversationHistory();
+    history.forEach((msg, i) => {
+      const role = msg.role === 'user' ? 'You' : 'Nexi';
+      console.log(`  ${i + 1}. [${role}] ${msg.content}`);
+    });
+    console.log();
+
+    // Print stats
+    const state = nexi.getState();
+    const stats = nexi.getMemoryStats();
+    console.log('-'.repeat(50));
+    console.log('📊 /stats');
+    console.log('-'.repeat(50));
+    console.log(`  Mode: ${state.mode}`);
+    console.log(`  Mood: ${state.mood}`);
+    console.log(`  Energy: ${state.energy}`);
+    console.log(`  Interactions: ${state.interactionCount}`);
+    console.log(`  Memories: ${stats.total}`);
+    console.log(`  Avg Importance: ${stats.avgImportance.toFixed(1)}`);
+    if (Object.keys(stats.byType).length > 0) {
+      console.log('  By Type:');
+      Object.entries(stats.byType).forEach(([type, count]) => {
+        console.log(`    - ${type}: ${count}`);
+      });
+    }
+    console.log('\n' + '='.repeat(50) + '\n');
+
+    // Assertions
+    expect(state.interactionCount).toBe(3);
     expect(history.length).toBe(6);
 
-    // Check memories
     const memories = nexi.searchMemories('TypeScript');
     expect(memories.length).toBeGreaterThan(0);
   });
