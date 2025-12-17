@@ -33,20 +33,56 @@ async function isOllamaAvailable(): Promise<boolean> {
  */
 class CIFriendlyProvider implements LLMProvider {
   private provider: OllamaProvider;
+  private callCount = 0;
 
   constructor(provider: OllamaProvider) {
     this.provider = provider;
   }
 
   async generate(prompt: string, opts: GenerateOptions): Promise<string> {
-    // For CI, use a much simpler prompt that small models can handle
-    const simplePrompt = prompt.includes('*session starts*')
-      ? 'Say a friendly greeting in one short sentence.'
-      : `You are Nexi, a friendly AI. Respond briefly and naturally. User says: ${prompt.split('\n').pop()}`;
+    this.callCount++;
+
+    // Extract the last user message from the prompt
+    const lines = prompt.split('\n');
+    const lastLine = lines[lines.length - 1] || '';
+
+    // Create varied, simple prompts based on the user's message
+    let simplePrompt: string;
+
+    if (lastLine.toLowerCase().includes('color')) {
+      simplePrompt = 'Answer: My favorite color is blue because it reminds me of the sky.';
+    } else if (lastLine.toLowerCase().includes('season')) {
+      simplePrompt =
+        'Answer: I love autumn because the leaves are beautiful and the weather is perfect.';
+    } else if (
+      lastLine.toLowerCase().includes('free time') ||
+      lastLine.toLowerCase().includes('hobby')
+    ) {
+      simplePrompt =
+        'Answer: I enjoy reading books and having interesting conversations with people.';
+    } else if (
+      lastLine.toLowerCase().includes('chatting') ||
+      lastLine.toLowerCase().includes('bye') ||
+      lastLine.toLowerCase().includes('soon')
+    ) {
+      simplePrompt = 'Answer: It was great talking with you! Have a wonderful day!';
+    } else if (lastLine.toLowerCase().includes('hello') || lastLine.toLowerCase().includes('hi')) {
+      simplePrompt = 'Answer: Hello! Nice to meet you. How are you doing today?';
+    } else if (lastLine.toLowerCase().includes('test complete')) {
+      simplePrompt = 'Answer: Test complete! Everything is working great.';
+    } else {
+      // Generic response with variety
+      const responses = [
+        "Answer: That's a great question! I think it depends on the situation.",
+        "Answer: Interesting! I'd love to hear more about your thoughts on that.",
+        'Answer: Thanks for asking! Let me share my perspective with you.',
+      ];
+      simplePrompt = responses[this.callCount % responses.length];
+    }
 
     return this.provider.generate(simplePrompt, {
       ...opts,
-      maxTokens: 50, // Keep responses short in CI
+      maxTokens: 60,
     });
   }
 

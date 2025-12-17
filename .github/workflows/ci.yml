@@ -75,7 +75,7 @@ jobs:
           sleep 5
 
       - name: Pull model for CI
-        run: ollama pull qwen2:0.5b
+        run: ollama pull smollm2:135m
 
       - name: Install dependencies
         run: npm ci
@@ -86,7 +86,7 @@ jobs:
       - name: Run Ollama integration tests
         run: npm run test:ollama
         env:
-          NEXI_MODEL_DEFAULT: qwen2:0.5b
+          NEXI_MODEL_DEFAULT: smollm2:135m
           NEXI_CI_MODE: true
 
   # Build Docker image
