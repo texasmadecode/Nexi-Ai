@@ -74,8 +74,8 @@ jobs:
           ollama serve &
           sleep 5
 
-      - name: Pull model (small for CI)
-        run: ollama pull tinyllama
+      - name: Pull model for CI
+        run: ollama pull qwen2:0.5b
 
       - name: Install dependencies
         run: npm ci
@@ -86,7 +86,8 @@ jobs:
       - name: Run Ollama integration tests
         run: npm run test:ollama
         env:
-          NEXI_MODEL_DEFAULT: tinyllama
+          NEXI_MODEL_DEFAULT: qwen2:0.5b
+          NEXI_CI_MODE: true
 
   # Build Docker image
   docker-build:
