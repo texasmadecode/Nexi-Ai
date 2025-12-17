@@ -176,7 +176,7 @@ describe('Nexi with Ollama (Real LLM)', () => {
     console.log('-'.repeat(60));
     console.log('📜 Full Conversation:');
     console.log('-'.repeat(60));
-    conversation.forEach((msg, i) => {
+    conversation.forEach((msg) => {
       const prefix = msg.role === 'user' ? '  You:' : '  Nexi:';
       console.log(`${prefix} ${msg.message}`);
     });
