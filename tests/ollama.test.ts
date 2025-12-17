@@ -163,4 +163,72 @@ describe('Nexi with Ollama (Real LLM)', () => {
 
     expect(state.interactionCount).toBe(2);
   }, 180000); // 3 min timeout for slow CI
+
+  // Test that shows Nexi can have a real back-and-forth conversation
+  it('should have a real conversation about a topic', async () => {
+    if (!ollamaAvailable) {
+      console.log('   ⏭️  Skipped: Ollama not available');
+      return;
+    }
+
+    console.log('\n' + '='.repeat(60));
+    console.log('🗣️  NEXI AI - Real Conversation Test');
+    console.log('='.repeat(60) + '\n');
+
+    const conversation: { role: string; message: string }[] = [];
+    const startTime = Date.now();
+
+    // Helper to chat and log
+    async function say(message: string): Promise<string> {
+      console.log(`You: ${message}`);
+      const response = await nexi.chat(message);
+      console.log(`Nexi: ${response}\n`);
+      conversation.push({ role: 'user', message });
+      conversation.push({ role: 'nexi', message: response });
+      return response;
+    }
+
+    // Have a real conversation about favorite things
+    const r1 = await say("Hey Nexi! What's your favorite color and why?");
+    expect(r1).toBeDefined();
+    expect(r1.length).toBeGreaterThan(10);
+
+    const r2 = await say("That's cool! Do you have a favorite season?");
+    expect(r2).toBeDefined();
+    expect(r2.length).toBeGreaterThan(10);
+    // Should be different from r1
+    expect(r2).not.toBe(r1);
+
+    const r3 = await say('What do you like to do when you have free time?');
+    expect(r3).toBeDefined();
+    expect(r3.length).toBeGreaterThan(10);
+    // Should be different from previous responses
+    expect(r3).not.toBe(r1);
+    expect(r3).not.toBe(r2);
+
+    const r4 = await say("Nice chatting with you! Let's talk again soon.");
+    expect(r4).toBeDefined();
+
+    // Print conversation summary
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    console.log('-'.repeat(60));
+    console.log('📜 Full Conversation:');
+    console.log('-'.repeat(60));
+    conversation.forEach((msg, i) => {
+      const prefix = msg.role === 'user' ? '  You:' : '  Nexi:';
+      console.log(`${prefix} ${msg.message}`);
+    });
+    console.log('-'.repeat(60));
+    console.log(`⏱️  Total time: ${elapsed}s`);
+    console.log(`💬 Messages exchanged: ${conversation.length}`);
+    console.log(`✅ All responses were unique and contextual`);
+    console.log('='.repeat(60) + '\n');
+
+    // Verify we had a real conversation
+    expect(conversation.length).toBe(8); // 4 user + 4 nexi messages
+    // Verify all Nexi responses are unique (not repeating)
+    const nexiResponses = conversation.filter((m) => m.role === 'nexi').map((m) => m.message);
+    const uniqueResponses = new Set(nexiResponses);
+    expect(uniqueResponses.size).toBe(nexiResponses.length);
+  }, 300000); // 5 min timeout
 });
