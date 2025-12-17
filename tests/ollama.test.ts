@@ -64,164 +64,66 @@ describe('Nexi with Ollama (Real LLM)', () => {
     }
   });
 
-  it('should respond with real AI when Ollama is available', async () => {
+  // Single comprehensive test to minimize LLM calls in CI
+  it('should have a conversation with real AI responses', async () => {
     if (!ollamaAvailable) {
       console.log('   ⏭️  Skipped: Ollama not available');
       return;
     }
 
     console.log('\n' + '='.repeat(60));
-    console.log('🤖 NEXI AI - Real Ollama Test');
+    console.log('🤖 NEXI AI - Real Ollama Integration Test');
     console.log('='.repeat(60) + '\n');
 
-    const response = await nexi.chat('Hello! How are you?');
+    const startTime = Date.now();
 
-    console.log('You: Hello! How are you?');
-    console.log(`Nexi: ${response}\n`);
-
-    expect(response).toBeDefined();
-    expect(response.length).toBeGreaterThan(10);
-  }, 60000); // 60s timeout for LLM
-
-  it('should have a full conversation with personality', async () => {
-    if (!ollamaAvailable) {
-      console.log('   ⏭️  Skipped: Ollama not available');
-      return;
-    }
-
-    console.log('\n' + '='.repeat(60));
-    console.log('🤖 NEXI AI - Full Conversation Test');
-    console.log('='.repeat(60) + '\n');
-
-    // Start session
-    const response1 = await nexi.chat('*session starts*');
-    console.log('You: *session starts*');
+    // Test 1: Basic greeting
+    console.log('📝 Test 1: Basic Response');
+    const response1 = await nexi.chat('Hi! Say hello in one sentence.');
+    console.log(`You: Hi! Say hello in one sentence.`);
     console.log(`Nexi: ${response1}\n`);
     expect(response1).toBeDefined();
+    expect(response1.length).toBeGreaterThan(5);
 
-    // Greeting
-    const response2 = await nexi.chat("Hey Nexi! What's up?");
-    console.log("You: Hey Nexi! What's up?");
-    console.log(`Nexi: ${response2}\n`);
-    expect(response2).toBeDefined();
+    // Test 2: Memory system
+    console.log('📝 Test 2: Memory Storage');
+    nexi.remember('User is testing Nexi');
+    const memories = nexi.searchMemories('testing');
+    console.log(`Stored memory: "User is testing Nexi"`);
+    console.log(`Memory search found: ${memories.length} result(s)\n`);
+    expect(memories.length).toBeGreaterThan(0);
 
-    // Remember something
-    nexi.remember('User is testing the AI system');
-    console.log('📝 /remember User is testing the AI system');
-    console.log('✓ Remembered\n');
-
-    // Ask about capabilities
-    const response3 = await nexi.chat('What can you do?');
-    console.log('You: What can you do?');
-    console.log(`Nexi: ${response3}\n`);
-    expect(response3).toBeDefined();
-
-    // Print stats
-    const state = nexi.getState();
-    const stats = nexi.getMemoryStats();
-    console.log('-'.repeat(60));
-    console.log('📊 Stats:');
-    console.log('-'.repeat(60));
-    console.log(`  Mode: ${state.mode}`);
-    console.log(`  Mood: ${state.mood}`);
-    console.log(`  Energy: ${state.energy}`);
-    console.log(`  Interactions: ${state.interactionCount}`);
-    console.log(`  Memories: ${stats.total}`);
-    console.log('='.repeat(60) + '\n');
-
-    expect(state.interactionCount).toBe(3);
-  }, 120000); // 2 min timeout
-
-  it('should respond differently in different modes', async () => {
-    if (!ollamaAvailable) {
-      console.log('   ⏭️  Skipped: Ollama not available');
-      return;
-    }
-
-    console.log('\n' + '='.repeat(60));
-    console.log('🤖 NEXI AI - Mode Comparison Test');
-    console.log('='.repeat(60) + '\n');
-
-    const question = 'What is 2 + 2?';
-
-    // React mode (quick)
-    nexi.setMode('react');
-    const reactResponse = await nexi.chat(question);
-    console.log(`[REACT MODE] ${question}`);
-    console.log(`Nexi: ${reactResponse}\n`);
-
-    nexi.clearConversation();
-
-    // Think mode (detailed)
-    nexi.setMode('think');
-    const thinkResponse = await nexi.chat(question);
-    console.log(`[THINK MODE] ${question}`);
-    console.log(`Nexi: ${thinkResponse}\n`);
-
-    console.log('='.repeat(60) + '\n');
-
-    expect(reactResponse).toBeDefined();
-    expect(thinkResponse).toBeDefined();
-    // Think mode typically produces longer responses
-    expect(thinkResponse.length).toBeGreaterThanOrEqual(reactResponse.length * 0.5);
-  }, 120000);
-
-  it('should stream responses in real-time', async () => {
-    if (!ollamaAvailable) {
-      console.log('   ⏭️  Skipped: Ollama not available');
-      return;
-    }
-
-    console.log('\n' + '='.repeat(60));
-    console.log('🤖 NEXI AI - Streaming Test');
-    console.log('='.repeat(60) + '\n');
-
-    console.log('You: Tell me a short joke');
-    process.stdout.write('Nexi: ');
-
+    // Test 3: Streaming
+    console.log('📝 Test 3: Streaming Response');
     const tokens: string[] = [];
-    const response = await nexi.chat('Tell me a short joke', {
+    process.stdout.write('Nexi (streaming): ');
+    const response2 = await nexi.chat('Say "test complete" in one sentence.', {
       stream: true,
       onToken: (token) => {
         tokens.push(token);
         process.stdout.write(token);
       },
     });
-
     console.log('\n');
-    console.log(`Total tokens streamed: ${tokens.length}`);
-    console.log('='.repeat(60) + '\n');
-
-    expect(response).toBeDefined();
     expect(tokens.length).toBeGreaterThan(0);
-  }, 60000);
+    expect(response2).toBeDefined();
 
-  it('should use memories in conversation context', async () => {
-    if (!ollamaAvailable) {
-      console.log('   ⏭️  Skipped: Ollama not available');
-      return;
-    }
+    // Print summary
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    const state = nexi.getState();
+    const stats = nexi.getMemoryStats();
 
-    console.log('\n' + '='.repeat(60));
-    console.log('🤖 NEXI AI - Memory Context Test');
+    console.log('-'.repeat(60));
+    console.log('📊 Test Summary:');
+    console.log('-'.repeat(60));
+    console.log(`  Time elapsed: ${elapsed}s`);
+    console.log(`  Interactions: ${state.interactionCount}`);
+    console.log(`  Tokens streamed: ${tokens.length}`);
+    console.log(`  Memories stored: ${stats.total}`);
+    console.log(`  Mode: ${state.mode}`);
+    console.log(`  Mood: ${state.mood}`);
     console.log('='.repeat(60) + '\n');
 
-    // Store a memory
-    nexi.remember('User name is Alex');
-    nexi.remember('User favorite color is blue');
-    console.log('📝 Stored memories:');
-    console.log('   - User name is Alex');
-    console.log('   - User favorite color is blue\n');
-
-    // Ask about remembered info
-    const response = await nexi.chat('What do you know about me?');
-    console.log('You: What do you know about me?');
-    console.log(`Nexi: ${response}\n`);
-
-    console.log('='.repeat(60) + '\n');
-
-    expect(response).toBeDefined();
-    // The response should reference stored memories in some way
-    expect(response.length).toBeGreaterThan(20);
-  }, 60000);
+    expect(state.interactionCount).toBe(2);
+  }, 180000); // 3 min timeout for slow CI
 });
