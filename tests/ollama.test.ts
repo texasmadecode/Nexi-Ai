@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import { Nexi } from '../src/core/nexi.js';
 import { OllamaProvider } from '../src/core/providers/ollama.js';
-import { LLMProvider, GenerateOptions } from '../src/core/providers/llm.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -16,8 +15,6 @@ import path from 'path';
  * - A model pulled (e.g., llama3.1:8b, qwen2:0.5b, or mistral)
  */
 
-const isCI = process.env.NEXI_CI_MODE === 'true';
-
 // Check if Ollama is available
 async function isOllamaAvailable(): Promise<boolean> {
   try {
@@ -25,73 +22,6 @@ async function isOllamaAvailable(): Promise<boolean> {
     return res.ok;
   } catch {
     return false;
-  }
-}
-
-/**
- * Simple provider wrapper for CI that uses shorter prompts
- */
-class CIFriendlyProvider implements LLMProvider {
-  private provider: OllamaProvider;
-  private callCount = 0;
-
-  constructor(provider: OllamaProvider) {
-    this.provider = provider;
-  }
-
-  async generate(prompt: string, opts: GenerateOptions): Promise<string> {
-    this.callCount++;
-
-    // Extract the last user message from the prompt
-    const lines = prompt.split('\n');
-    const lastLine = lines[lines.length - 1] || '';
-
-    // Create varied, simple prompts based on the user's message
-    let simplePrompt: string;
-
-    if (lastLine.toLowerCase().includes('color')) {
-      simplePrompt = 'Answer: My favorite color is blue because it reminds me of the sky.';
-    } else if (lastLine.toLowerCase().includes('season')) {
-      simplePrompt =
-        'Answer: I love autumn because the leaves are beautiful and the weather is perfect.';
-    } else if (
-      lastLine.toLowerCase().includes('free time') ||
-      lastLine.toLowerCase().includes('hobby')
-    ) {
-      simplePrompt =
-        'Answer: I enjoy reading books and having interesting conversations with people.';
-    } else if (
-      lastLine.toLowerCase().includes('chatting') ||
-      lastLine.toLowerCase().includes('bye') ||
-      lastLine.toLowerCase().includes('soon')
-    ) {
-      simplePrompt = 'Answer: It was great talking with you! Have a wonderful day!';
-    } else if (lastLine.toLowerCase().includes('hello') || lastLine.toLowerCase().includes('hi')) {
-      simplePrompt = 'Answer: Hello! Nice to meet you. How are you doing today?';
-    } else if (lastLine.toLowerCase().includes('test complete')) {
-      simplePrompt = 'Answer: Test complete! Everything is working great.';
-    } else {
-      // Generic response with variety
-      const responses = [
-        "Answer: That's a great question! I think it depends on the situation.",
-        "Answer: Interesting! I'd love to hear more about your thoughts on that.",
-        'Answer: Thanks for asking! Let me share my perspective with you.',
-      ];
-      simplePrompt = responses[this.callCount % responses.length];
-    }
-
-    return this.provider.generate(simplePrompt, {
-      ...opts,
-      maxTokens: 60,
-    });
-  }
-
-  async isAvailable(): Promise<boolean> {
-    return this.provider.isAvailable();
-  }
-
-  getModelForMode(mode: string): string {
-    return this.provider.getModelForMode(mode as any);
   }
 }
 
@@ -105,16 +35,12 @@ describe('Nexi with Ollama (Real LLM)', () => {
     if (!ollamaAvailable) {
       console.log('\n⚠️  Ollama not available - skipping real LLM tests');
       console.log('   To run these tests, start Ollama: ollama serve\n');
-    } else if (isCI) {
-      console.log('\n🔧 Running in CI mode with simplified prompts\n');
     }
   });
 
   beforeEach(() => {
     if (!ollamaAvailable) return;
-    const ollamaProvider = OllamaProvider.fromEnv();
-    // Use CI-friendly wrapper in CI, full provider locally
-    const provider = isCI ? new CIFriendlyProvider(ollamaProvider) : ollamaProvider;
+    const provider = OllamaProvider.fromEnv();
     nexi = new Nexi({ dataDir: testDataDir }, provider);
   });
 
