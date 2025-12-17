@@ -11,7 +11,7 @@ describe('Mode System', () => {
     });
 
     it('should have correct structure for each mode', () => {
-      for (const [mode, config] of Object.entries(MODE_CONFIGS)) {
+      for (const config of Object.values(MODE_CONFIGS)) {
         expect(config).toHaveProperty('name');
         expect(config).toHaveProperty('description');
         expect(config).toHaveProperty('maxTokens');

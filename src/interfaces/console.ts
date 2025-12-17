@@ -61,18 +61,20 @@ async function handleCommand(input: string): Promise<boolean> {
     case '/remember':
       if (!args) { log(yellow('\nUsage: /remember <text>\n')); return true; }
       nexi.remember(args); log(green(`\n✓ Remembered\n`)); return true;
-    case '/search':
+    case '/search': {
       if (!args) { log(yellow('\nUsage: /search <query>\n')); return true; }
       const mems = nexi.searchMemories(args);
       if (!mems.length) log(gray('\nNo memories.\n'));
       else { log(yellow(`\n🔍 ${mems.length} found:`)); mems.forEach((m, i) => log(white(`  ${i + 1}. [${m.type}] ${m.content}`))); log(''); }
       return true;
+    }
     case '/clear': nexi.clearConversation(); log(cyan('\n✓ Cleared\n')); return true;
-    case '/save':
+    case '/save': {
       log(gray('\nProcessing...'));
       const saved = await nexi.processMemories();
       log(saved.length ? green(`✓ ${saved.length} saved\n`) : gray('Nothing new.\n'));
       return true;
+    }
     case '/quit': case '/exit': case '/q': return false;
     default:
       if (input.startsWith('/')) { log(red(`\nUnknown: ${cmd}\n`)); return true; }
