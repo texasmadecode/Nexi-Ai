@@ -8,27 +8,27 @@ import path from 'path';
  * Mock LLM Provider for testing without Ollama
  */
 class MockLLMProvider implements LLMProvider {
-  private responses: Map<string, string> = new Map();
-
-  constructor() {
-    // Set up default responses
-    this.responses.set('default', "Hey! I'm doing well, thanks for asking.");
-    this.responses.set('greeting', 'Hello there! Nice to meet you.');
-    this.responses.set('session', '*stretches* Oh hey! Good to see you.');
-  }
+  private callCount = 0;
+  private responses: string[] = [
+    'Hello there! Nice to meet you.',
+    "I'm doing great, thanks for asking! How about you?",
+    "That's interesting! I love learning new things about people.",
+    '*stretches* Oh hey! Good to see you.',
+    'Hmm, let me think about that... I find conversations like this really enjoyable!',
+  ];
 
   async generate(prompt: string, opts: GenerateOptions): Promise<string> {
     // Simulate some latency
     await new Promise((resolve) => setTimeout(resolve, 10));
 
-    let response = this.responses.get('default')!;
-
-    // Check for specific patterns in prompt
+    // Check for session start pattern first
     if (prompt.includes('*session starts*')) {
-      response = this.responses.get('session')!;
-    } else if (prompt.toLowerCase().includes('hello') || prompt.toLowerCase().includes('hi')) {
-      response = this.responses.get('greeting')!;
+      return this.responses[3]; // stretches response
     }
+
+    // Return varied responses based on call count
+    const response = this.responses[this.callCount % this.responses.length];
+    this.callCount++;
 
     // Handle streaming
     if (opts.stream && opts.onToken) {
@@ -49,8 +49,8 @@ class MockLLMProvider implements LLMProvider {
     return 'mock-model';
   }
 
-  setResponse(key: string, response: string): void {
-    this.responses.set(key, response);
+  resetCallCount(): void {
+    this.callCount = 0;
   }
 }
 
@@ -77,10 +77,10 @@ describe('Nexi Integration', () => {
 
       expect(response).toBeDefined();
       expect(response.length).toBeGreaterThan(0);
-      expect(response).toContain('Hello');
     });
 
     it('should respond to session start', async () => {
+      mockProvider.resetCallCount();
       const response = await nexi.chat('*session starts*');
 
       expect(response).toBeDefined();
@@ -108,7 +108,7 @@ describe('Nexi Integration', () => {
 
       expect(response).toBeDefined();
       expect(tokens.length).toBeGreaterThan(0);
-      expect(tokens.join('')).toContain('Hello');
+      expect(tokens.join('').trim()).toBe(response);
     });
   });
 

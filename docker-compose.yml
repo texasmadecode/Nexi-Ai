@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  nexi:
+    build: .
+    container_name: nexi-ai
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - NEXI_MODEL_DEFAULT=llama3.1:8b
+      - NEXI_DATA_DIR=/app/data
+    volumes:
+      - nexi-data:/app/data
+    depends_on:
+      - ollama
+    stdin_open: true
+    tty: true
+    networks:
+      - nexi-network
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    networks:
+      - nexi-network
+
+volumes:
+  nexi-data:
+  ollama-data:
+
+networks:
+  nexi-network:
+    driver: bridge
