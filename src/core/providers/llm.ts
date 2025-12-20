@@ -20,6 +20,13 @@ export interface LLMProvider {
   generate(prompt: string, opts: GenerateOptions): Promise<string>;
 
   /**
+   * Generate embeddings for text (for semantic search)
+   * @param text - The text to embed
+   * @returns Vector embedding array
+   */
+  embed(text: string): Promise<number[]>;
+
+  /**
    * Check if the provider is available/connected
    */
   isAvailable(): Promise<boolean>;

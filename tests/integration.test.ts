@@ -41,6 +41,12 @@ class MockLLMProvider implements LLMProvider {
     return response;
   }
 
+  async embed(text: string): Promise<number[]> {
+    // Simple mock embedding based on text hash
+    const hash = text.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return Array.from({ length: 384 }, (_, i) => Math.sin(hash + i) * 0.5);
+  }
+
   async isAvailable(): Promise<boolean> {
     return true;
   }
@@ -158,6 +164,14 @@ describe('Nexi Integration', () => {
       const stats = nexi.getMemoryStats();
       expect(stats.total).toBeGreaterThanOrEqual(2);
     });
+
+    it('should support semantic memory search with embeddings', async () => {
+      await nexi.rememberWithEmbedding('User loves programming in TypeScript');
+      await nexi.rememberWithEmbedding('User enjoys hiking on weekends');
+
+      const results = await nexi.searchMemoriesSemantic('coding languages');
+      expect(results.length).toBeGreaterThan(0);
+    });
   });
 
   describe('conversation management', () => {
@@ -174,6 +188,50 @@ describe('Nexi Integration', () => {
     it('should report provider as available', async () => {
       const available = await nexi.isProviderAvailable();
       expect(available).toBe(true);
+    });
+  });
+
+  describe('conversation export/import', () => {
+    it('should export conversation to JSON', async () => {
+      await nexi.chat('Hello!');
+      await nexi.chat('How are you?');
+
+      const exported = nexi.exportConversation();
+      const data = JSON.parse(exported);
+
+      expect(data.version).toBe(1);
+      expect(data.exportedAt).toBeDefined();
+      expect(data.conversation).toHaveLength(4);
+      expect(data.conversation[0].role).toBe('user');
+      expect(data.conversation[0].content).toBe('Hello!');
+    });
+
+    it('should import conversation from JSON', async () => {
+      await nexi.chat('Hello!');
+      const exported = nexi.exportConversation();
+
+      nexi.clearConversation();
+      expect(nexi.getConversationHistory()).toHaveLength(0);
+
+      const result = nexi.importConversation(exported);
+
+      expect(result.success).toBe(true);
+      expect(result.messagesImported).toBe(2);
+      expect(nexi.getConversationHistory()).toHaveLength(2);
+    });
+
+    it('should handle invalid import data', () => {
+      const result = nexi.importConversation('{"invalid": true}');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Invalid format');
+    });
+
+    it('should handle malformed JSON', () => {
+      const result = nexi.importConversation('not json at all');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
     });
   });
 });

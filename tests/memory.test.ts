@@ -53,6 +53,64 @@ describe('MemoryStore', () => {
         expect(memory.type).toBe(type);
       }
     });
+
+    it('should clamp importance to valid range (1-10)', () => {
+      const lowMemory = store.store({
+        type: 'fact',
+        content: 'Low importance',
+        importance: -5,
+        emotional_weight: 0,
+        tags: [],
+      });
+      expect(lowMemory.importance).toBe(1);
+
+      const highMemory = store.store({
+        type: 'fact',
+        content: 'High importance',
+        importance: 100,
+        emotional_weight: 0,
+        tags: [],
+      });
+      expect(highMemory.importance).toBe(10);
+
+      const normalMemory = store.store({
+        type: 'fact',
+        content: 'Normal importance',
+        importance: 5.7,
+        emotional_weight: 0,
+        tags: [],
+      });
+      expect(normalMemory.importance).toBe(6); // Rounded
+    });
+
+    it('should clamp emotional_weight to valid range (-5 to 5)', () => {
+      const lowMemory = store.store({
+        type: 'fact',
+        content: 'Very negative',
+        importance: 5,
+        emotional_weight: -100,
+        tags: [],
+      });
+      expect(lowMemory.emotional_weight).toBe(-5);
+
+      const highMemory = store.store({
+        type: 'fact',
+        content: 'Very positive',
+        importance: 5,
+        emotional_weight: 100,
+        tags: [],
+      });
+      expect(highMemory.emotional_weight).toBe(5);
+
+      const normalMemory = store.store({
+        type: 'fact',
+        content: 'Slightly positive',
+        importance: 5,
+        emotional_weight: 2.3,
+        tags: [],
+      });
+      expect(normalMemory.emotional_weight).toBe(2); // Rounded
+    });
   });
 
   describe('get', () => {
@@ -420,6 +478,110 @@ describe('MemoryStore', () => {
       const stats = store.getStats();
       expect(stats.total).toBe(0);
       expect(stats.avgImportance).toBe(0);
+    });
+  });
+
+  describe('deduplication', () => {
+    it('should find duplicate memories with similar content', () => {
+      store.store({
+        type: 'fact',
+        content: 'User loves programming in TypeScript',
+        importance: 5,
+        emotional_weight: 0,
+        tags: ['coding'],
+      });
+      store.store({
+        type: 'fact',
+        content: 'User loves programming with TypeScript',
+        importance: 6,
+        emotional_weight: 0,
+        tags: ['dev'],
+      });
+
+      const duplicates = store.findDuplicates(0.7);
+
+      expect(duplicates.length).toBe(1);
+      expect(duplicates[0].similarity).toBeGreaterThanOrEqual(0.7);
+    });
+
+    it('should not find duplicates with different content', () => {
+      store.store({
+        type: 'fact',
+        content: 'User loves programming',
+        importance: 5,
+        emotional_weight: 0,
+        tags: [],
+      });
+      store.store({
+        type: 'fact',
+        content: 'User enjoys hiking outdoors',
+        importance: 5,
+        emotional_weight: 0,
+        tags: [],
+      });
+
+      const duplicates = store.findDuplicates(0.8);
+
+      expect(duplicates.length).toBe(0);
+    });
+
+    it('should deduplicate and keep higher importance memory', () => {
+      store.store({
+        type: 'fact',
+        content: 'User likes coffee in the morning always',
+        importance: 4,
+        emotional_weight: 0,
+        tags: ['morning'],
+      });
+      store.store({
+        type: 'fact',
+        content: 'User likes coffee in the morning every day',
+        importance: 7,
+        emotional_weight: 0,
+        tags: ['beverage'],
+      });
+
+      const initialCount = store.getStats().total;
+      const removed = store.deduplicate(0.6);
+
+      expect(removed).toBe(1);
+      expect(store.getStats().total).toBe(initialCount - 1);
+
+      // The remaining memory should be the higher importance one
+      const results = store.query({ search: 'coffee' });
+      expect(results[0].importance).toBe(7);
+    });
+
+    it('should merge tags when deduplicating', () => {
+      store.store({
+        type: 'fact',
+        content: 'User prefers dark mode interface',
+        importance: 5,
+        emotional_weight: 0,
+        tags: ['ui', 'preferences'],
+      });
+      store.store({
+        type: 'fact',
+        content: 'User prefers dark mode display',
+        importance: 5,
+        emotional_weight: 0,
+        tags: ['display', 'settings'],
+      });
+
+      store.deduplicate(0.6);
+
+      const results = store.query({ search: 'dark mode' });
+      expect(results.length).toBe(1);
+      expect(results[0].tags).toContain('ui');
+      expect(results[0].tags).toContain('display');
+    });
+
+    it('should handle empty store', () => {
+      const duplicates = store.findDuplicates();
+      expect(duplicates.length).toBe(0);
+
+      const removed = store.deduplicate();
+      expect(removed).toBe(0);
     });
   });
 });

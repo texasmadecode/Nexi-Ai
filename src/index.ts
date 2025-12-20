@@ -1,6 +1,15 @@
 // Nexi AI - Main Entry Point
 
-export { Nexi, ChatOptions } from './core/nexi.js';
+export { Nexi, ChatOptions, NexiOptions } from './core/nexi.js';
+export { SentimentAnalyzer, SentimentResult } from './core/sentiment.js';
+export {
+  PersonalityConfig,
+  PersonalityTraits,
+  PERSONALITY_PRESETS,
+  getPreset,
+  listPresets,
+} from './core/personality.js';
+export { logger, createLogger, LogLevel, LogEntry, LogHandler } from './utils/logger.js';
 export { StateManager } from './core/state.js';
 export { MemoryStore } from './memory/store.js';
 export { buildSystemPrompt, buildMemoryExtractionPrompt } from './core/prompt.js';

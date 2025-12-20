@@ -15,17 +15,30 @@ interface OllamaResponse {
   done: boolean;
 }
 
+interface OllamaEmbedRequest {
+  model: string;
+  input: string;
+}
+
+interface OllamaEmbedResponse {
+  embeddings: number[][];
+}
+
 const decoder = new TextDecoder();
 
 export class OllamaProvider implements LLMProvider {
   private readonly config: LLMProviderConfig;
   private readonly generateUrl: string;
   private readonly tagsUrl: string;
+  private readonly embedUrl: string;
+  private readonly embeddingModel: string;
 
   constructor(config: LLMProviderConfig) {
     this.config = config;
     this.generateUrl = config.host + '/api/generate';
     this.tagsUrl = config.host + '/api/tags';
+    this.embedUrl = config.host + '/api/embed';
+    this.embeddingModel = process.env.NEXI_EMBEDDING_MODEL || 'nomic-embed-text';
   }
 
   static fromEnv(): OllamaProvider {
@@ -60,6 +73,26 @@ export class OllamaProvider implements LLMProvider {
     } catch {
       return false;
     }
+  }
+
+  async embed(text: string): Promise<number[]> {
+    const body: OllamaEmbedRequest = {
+      model: this.embeddingModel,
+      input: text,
+    };
+
+    const res = await fetch(this.embedUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      throw new Error('Ollama embed error: ' + res.status);
+    }
+
+    const data = (await res.json()) as OllamaEmbedResponse;
+    return data.embeddings[0];
   }
 
   async generate(prompt: string, opts: GenerateOptions): Promise<string> {
