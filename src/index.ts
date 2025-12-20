@@ -5,6 +5,7 @@ export { SentimentAnalyzer, SentimentResult } from './core/sentiment.js';
 export {
   PersonalityConfig,
   PersonalityTraits,
+  PersonalityInput,
   PERSONALITY_PRESETS,
   getPreset,
   listPresets,

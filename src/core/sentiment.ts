@@ -4,21 +4,22 @@ import { LLMProvider } from './providers/llm.js';
 import { MoodState } from '../types/index.js';
 
 export interface SentimentResult {
-  mood: MoodState | 'neutral';
+  mood: MoodState;
   energy: 'up' | 'down' | 'neutral';
   confidence: number;
 }
 
-// Word patterns for rule-based analysis
+// Word patterns for rule-based analysis (must match MoodState type)
 const MOOD_PATTERNS: Record<MoodState, RegExp[]> = {
+  neutral: [],
   curious: [/\?{2,}/, /wonder/i, /curious/i, /how does/i, /what if/i, /why/i],
   playful: [/lol/i, /haha/i, /😂/, /🤣/, /joke/i, /funny/i, /tease/i],
   focused: [/serious/i, /important/i, /need to/i, /must/i, /critical/i],
   warm: [/thank/i, /love/i, /appreciate/i, /❤️/, /🥰/, /sweet/i, /kind/i],
-  reflective: [/think about/i, /reflect/i, /remember when/i, /used to/i, /past/i],
   tired: [/tired/i, /exhausted/i, /sleepy/i, /worn out/i, /😴/],
   excited: [/excited/i, /amazing/i, /awesome/i, /can't wait/i, /🎉/, /!/],
-  neutral: [],
+  irritated: [/annoyed/i, /irritated/i, /ugh/i, /come on/i],
+  withdrawn: [/think about/i, /reflect/i, /remember when/i, /used to/i, /past/i, /alone/i],
 };
 
 const ENERGY_PATTERNS = {
@@ -40,7 +41,7 @@ export class SentimentAnalyzer {
    */
   analyzeRuleBased(input: string): SentimentResult {
     const lower = input.toLowerCase();
-    let bestMood: MoodState | 'neutral' = 'neutral';
+    let bestMood: MoodState = 'neutral';
     let bestScore = 0;
 
     // Check each mood pattern
@@ -106,7 +107,7 @@ export class SentimentAnalyzer {
 Message: "${input}"
 
 Respond with this exact format:
-{"mood":"<one of: curious, playful, focused, warm, reflective, tired, excited, neutral>","energy":"<one of: up, down, neutral>","confidence":<0.0 to 1.0>}`;
+{"mood":"<one of: neutral, curious, playful, focused, warm, tired, excited, irritated, withdrawn>","energy":"<one of: up, down, neutral>","confidence":<0.0 to 1.0>}`;
 
       const response = await this.provider.generate(prompt, {
         mode: 'react',
@@ -131,16 +132,17 @@ Respond with this exact format:
     return this.analyzeRuleBased(input);
   }
 
-  private validateMood(mood: string): MoodState | 'neutral' {
-    const validMoods: (MoodState | 'neutral')[] = [
+  private validateMood(mood: string): MoodState {
+    const validMoods: MoodState[] = [
+      'neutral',
       'curious',
       'playful',
       'focused',
       'warm',
-      'reflective',
       'tired',
       'excited',
-      'neutral',
+      'irritated',
+      'withdrawn',
     ];
     return validMoods.includes(mood as MoodState) ? (mood as MoodState) : 'neutral';
   }

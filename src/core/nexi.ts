@@ -9,6 +9,7 @@ import { detectMode, parseModeCommand } from './modes.js';
 import { SentimentAnalyzer } from './sentiment.js';
 import {
   PersonalityConfig,
+  PersonalityInput,
   DEFAULT_PERSONALITY,
   validatePersonality,
   getPersonalityPrompt,
@@ -46,7 +47,7 @@ export interface ChatOptions {
 
 export interface NexiOptions {
   useLLMSentiment?: boolean;
-  personality?: Partial<PersonalityConfig> | string; // Config object or preset name
+  personality?: PersonalityInput | string; // Config object or preset name
 }
 
 export class Nexi {
@@ -320,7 +321,7 @@ export class Nexi {
   /**
    * Set personality (by config or preset name)
    */
-  setPersonality(personality: Partial<PersonalityConfig> | string): void {
+  setPersonality(personality: PersonalityInput | string): void {
     if (typeof personality === 'string') {
       this.personality = getPreset(personality) || DEFAULT_PERSONALITY;
     } else {

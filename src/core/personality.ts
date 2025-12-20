@@ -138,9 +138,20 @@ export function validateTraits(traits: Partial<PersonalityTraits>): PersonalityT
 }
 
 /**
+ * Input type for validatePersonality (allows partial traits)
+ */
+export interface PersonalityInput {
+  name?: string;
+  traits?: Partial<PersonalityTraits>;
+  defaultMood?: MoodState;
+  defaultEnergy?: EnergyLevel;
+  systemPromptAdditions?: string;
+}
+
+/**
  * Validate a full personality config
  */
-export function validatePersonality(config: Partial<PersonalityConfig>): PersonalityConfig {
+export function validatePersonality(config: PersonalityInput): PersonalityConfig {
   return {
     name: config.name || 'custom',
     traits: config.traits ? validateTraits(config.traits) : { ...DEFAULT_TRAITS },
