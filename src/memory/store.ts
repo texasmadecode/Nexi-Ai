@@ -429,8 +429,12 @@ export class MemoryStore {
   /**
    * Find potential duplicate memories using text similarity
    */
-  findDuplicates(similarityThreshold: number = 0.8): Array<{ original: Memory; duplicate: Memory; similarity: number }> {
-    const allMemories = this.db.prepare('SELECT * FROM memories ORDER BY created_at ASC').all() as any[];
+  findDuplicates(
+    similarityThreshold: number = 0.8
+  ): Array<{ original: Memory; duplicate: Memory; similarity: number }> {
+    const allMemories = this.db
+      .prepare('SELECT * FROM memories ORDER BY created_at ASC')
+      .all() as any[];
     const duplicates: Array<{ original: Memory; duplicate: Memory; similarity: number }> = [];
 
     for (let i = 0; i < allMemories.length; i++) {

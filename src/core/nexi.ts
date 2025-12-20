@@ -273,13 +273,21 @@ export class Nexi {
   /**
    * Import conversation from exported JSON
    */
-  importConversation(jsonData: string): { success: boolean; messagesImported: number; error?: string } {
+  importConversation(jsonData: string): {
+    success: boolean;
+    messagesImported: number;
+    error?: string;
+  } {
     try {
       const data = JSON.parse(jsonData);
 
       // Validate structure
       if (!data.conversation || !Array.isArray(data.conversation)) {
-        return { success: false, messagesImported: 0, error: 'Invalid format: missing conversation array' };
+        return {
+          success: false,
+          messagesImported: 0,
+          error: 'Invalid format: missing conversation array',
+        };
       }
 
       // Import conversation history

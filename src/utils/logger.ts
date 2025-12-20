@@ -67,7 +67,12 @@ class Logger {
     this.handlers = [];
   }
 
-  private log(level: LogLevel, category: string, message: string, data?: Record<string, unknown>): void {
+  private log(
+    level: LogLevel,
+    category: string,
+    message: string,
+    data?: Record<string, unknown>
+  ): void {
     if (LOG_LEVELS[level] < LOG_LEVELS[this.level]) {
       return;
     }
