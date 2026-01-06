@@ -21,6 +21,13 @@ import {
   getPreset,
   listPresets,
 } from '../core/personality.js';
+import {
+  Character,
+  getCharacter,
+  listCharacters,
+  createCharacter,
+  CHARACTER_PRESETS,
+} from '../core/characters.js';
 import { logger, LogLevel } from '../utils/logger.js';
 
 // Re-export types for convenience
@@ -35,7 +42,11 @@ export type {
   PersonalityInput,
   NexiOptions,
   LogLevel,
+  Character,
 };
+
+// Re-export character functions
+export { getCharacter, listCharacters, createCharacter, CHARACTER_PRESETS };
 
 /**
  * Configuration for creating a Nexi instance
@@ -55,6 +66,12 @@ export interface NexiAPIConfig {
 
   /** Personality preset name or custom config */
   personality?: string | PersonalityInput;
+
+  /** Character preset name or custom character */
+  character?: string | Character;
+
+  /** Custom system prompt (overrides character/personality prompts) */
+  systemPrompt?: string;
 
   /** Use LLM for sentiment analysis (slower but more accurate) */
   useLLMSentiment?: boolean;
@@ -162,10 +179,25 @@ export class NexiAPI {
       maxRelevantMemories: config.maxRelevantMemories || 5,
     };
 
+    // Determine system prompt
+    let systemPrompt: string | undefined;
+
+    // Priority: systemPrompt > character > personality (default)
+    if (config.systemPrompt) {
+      systemPrompt = config.systemPrompt;
+    } else if (config.character) {
+      const char =
+        typeof config.character === 'string' ? getCharacter(config.character) : config.character;
+      if (char && char.systemPrompt) {
+        systemPrompt = char.systemPrompt;
+      }
+    }
+
     // Create Nexi options
     const nexiOptions: NexiOptions = {
       useLLMSentiment: config.useLLMSentiment,
       personality: config.personality,
+      systemPrompt,
     };
 
     // Create instance
@@ -279,6 +311,49 @@ export class NexiAPI {
    */
   getPersonality(): PersonalityConfig {
     return this.nexi.getPersonality();
+  }
+
+  /**
+   * Set a custom system prompt (for roleplay, custom characters, etc.)
+   * Pass null to reset to default Nexi prompt
+   */
+  setSystemPrompt(prompt: string | null): void {
+    this.nexi.setSystemPrompt(prompt);
+  }
+
+  /**
+   * Set character by name or custom character object
+   */
+  setCharacter(character: string | Character): void {
+    const char = typeof character === 'string' ? getCharacter(character) : character;
+    if (char && char.systemPrompt) {
+      this.nexi.setSystemPrompt(char.systemPrompt);
+      // Set default mode if character specifies one
+      if (char.defaultMode) {
+        this.nexi.setMode(char.defaultMode);
+      }
+    }
+  }
+
+  /**
+   * Reset to default Nexi character
+   */
+  resetCharacter(): void {
+    this.nexi.setSystemPrompt(null);
+  }
+
+  /**
+   * Get available characters
+   */
+  static getCharacters(): string[] {
+    return listCharacters();
+  }
+
+  /**
+   * Get a character by name
+   */
+  static getCharacter(name: string): Character | undefined {
+    return getCharacter(name);
   }
 
   /**

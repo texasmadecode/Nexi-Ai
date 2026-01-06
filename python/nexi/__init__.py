@@ -24,6 +24,12 @@ from .client import (
     EnergyLevel,
     MemoryType,
     quick_chat,
+    # Character system
+    Character,
+    CHARACTER_PRESETS,
+    get_character,
+    list_characters,
+    create_character,
 )
 
 __version__ = "0.2.0"
@@ -40,4 +46,10 @@ __all__ = [
     "EnergyLevel",
     "MemoryType",
     "quick_chat",
+    # Character system
+    "Character",
+    "CHARACTER_PRESETS",
+    "get_character",
+    "list_characters",
+    "create_character",
 ]

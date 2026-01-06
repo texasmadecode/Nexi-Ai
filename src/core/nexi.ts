@@ -48,6 +48,7 @@ export interface ChatOptions {
 export interface NexiOptions {
   useLLMSentiment?: boolean;
   personality?: PersonalityInput | string; // Config object or preset name
+  systemPrompt?: string; // Custom system prompt (overrides default)
 }
 
 export class Nexi {
@@ -57,6 +58,7 @@ export class Nexi {
   private readonly memoryStore: MemoryStore;
   private readonly sentimentAnalyzer: SentimentAnalyzer;
   private personality: PersonalityConfig;
+  private customSystemPrompt: string | null = null;
   private conversationHistory: ConversationMessage[] = [];
 
   constructor(
@@ -84,6 +86,11 @@ export class Nexi {
       this.personality = validatePersonality(options.personality);
     } else {
       this.personality = DEFAULT_PERSONALITY;
+    }
+
+    // Set custom system prompt if provided
+    if (options?.systemPrompt) {
+      this.customSystemPrompt = options.systemPrompt;
     }
 
     const savedState = this.memoryStore.loadState<Partial<NexiState>>('nexi_state');
@@ -119,9 +126,23 @@ export class Nexi {
       this.config.maxRelevantMemories
     );
     const state = this.stateManager.getState();
-    const basePrompt = buildSystemPrompt(state, relevantMemories);
-    const personalityPrompt = getPersonalityPrompt(this.personality);
-    const systemPrompt = basePrompt + personalityPrompt;
+
+    // Build system prompt - use custom if set, otherwise use default
+    let systemPrompt: string;
+    if (this.customSystemPrompt) {
+      systemPrompt = this.customSystemPrompt;
+      // Append memory context if we have memories
+      if (relevantMemories.length > 0) {
+        const memoryContext = relevantMemories
+          .map((m) => `- [${m.type}] ${m.content}`)
+          .join('\n');
+        systemPrompt += `\n\n## Relevant Memories\n${memoryContext}`;
+      }
+    } else {
+      const basePrompt = buildSystemPrompt(state, relevantMemories);
+      const personalityPrompt = getPersonalityPrompt(this.personality);
+      systemPrompt = basePrompt + personalityPrompt;
+    }
 
     // Build conversation context efficiently
     const contextMsgs = this.conversationHistory.slice(-this.config.maxContextMessages);
@@ -336,6 +357,21 @@ export class Nexi {
       this.personality = validatePersonality(personality);
     }
     log.info('Personality changed', { name: this.personality.name });
+  }
+
+  /**
+   * Set a custom system prompt (overrides default Nexi prompt)
+   */
+  setSystemPrompt(prompt: string | null): void {
+    this.customSystemPrompt = prompt;
+    log.info('System prompt changed', { custom: !!prompt });
+  }
+
+  /**
+   * Get current custom system prompt (null if using default)
+   */
+  getSystemPrompt(): string | null {
+    return this.customSystemPrompt;
   }
 
   /**

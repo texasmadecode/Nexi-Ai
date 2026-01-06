@@ -25,19 +25,32 @@ function color(text: string, c: keyof typeof COLORS): string {
   return `${COLORS[c]}${text}${COLORS.reset}`;
 }
 
+let currentCharacter = 'nexi';
+
 function printHelp(): void {
   console.log(`
 ${color('Commands:', 'bright')}
-  ${color('/help', 'cyan')}        - Show this help
-  ${color('/mode <m>', 'cyan')}    - Set mode (react, chat, think)
-  ${color('/mood', 'cyan')}        - Show current mood
-  ${color('/stats', 'cyan')}       - Show stats
+  ${color('/help', 'cyan')}          - Show this help
+  ${color('/characters', 'cyan')}    - List available characters
+  ${color('/char <name>', 'cyan')}   - Switch character (e.g., /char pirate)
+  ${color('/reset', 'cyan')}         - Reset to default Nexi
+  ${color('/mode <m>', 'cyan')}      - Set mode (react, chat, think)
+  ${color('/mood', 'cyan')}          - Show current mood
+  ${color('/stats', 'cyan')}         - Show stats
   ${color('/remember <text>', 'cyan')} - Store a memory
   ${color('/search <query>', 'cyan')}  - Search memories
-  ${color('/clear', 'cyan')}       - Clear conversation history
-  ${color('/personality <p>', 'cyan')} - Set personality preset
-  ${color('/presets', 'cyan')}     - List personality presets
-  ${color('/exit', 'cyan')}        - Exit chat
+  ${color('/clear', 'cyan')}         - Clear conversation history
+  ${color('/exit', 'cyan')}          - Exit chat
+
+${color('Characters:', 'bright')}
+  nexi       - Default Nexi AI
+  assistant  - Helpful assistant
+  pirate     - Captain Blackbeard 🏴‍☠️
+  wizard     - Gandrix the Wise 🧙
+  catgirl    - Miko the catgirl 🐱
+  robot      - UNIT-7 sarcastic robot 🤖
+  storyteller - The Narrator (D&D style)
+  therapist  - Dr. Sage (supportive listener)
 `);
 }
 
@@ -45,7 +58,7 @@ async function main(): Promise<void> {
   console.log(color('\n╔════════════════════════════════════════╗', 'cyan'));
   console.log(color('║', 'cyan') + color('        🤖 NEXI AI - Terminal Chat       ', 'bright') + color('║', 'cyan'));
   console.log(color('╚════════════════════════════════════════╝', 'cyan'));
-  console.log(color('Type /help for commands, /exit to quit\n', 'dim'));
+  console.log(color('Type /help for commands, /characters to see roleplay options\n', 'dim'));
 
   // Create Nexi instance
   const nexi = await NexiAPI.create({
@@ -61,13 +74,19 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  console.log(color('✓ Connected to Ollama\n', 'green'));
+  console.log(color('✓ Connected to Ollama', 'green'));
+  console.log(color(`✓ Character: ${currentCharacter}\n`, 'green'));
 
   // Create readline interface
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
   });
+
+  const getPromptName = () => {
+    const char = NexiAPI.getCharacter(currentCharacter);
+    return char?.displayName || 'Nexi';
+  };
 
   const prompt = (): void => {
     rl.question(color('You: ', 'green'), async (input) => {
@@ -98,6 +117,49 @@ async function main(): Promise<void> {
             printHelp();
             break;
 
+          case 'characters':
+          case 'chars':
+            const chars = NexiAPI.getCharacters();
+            console.log(color('\n🎭 Available Characters:', 'cyan'));
+            for (const name of chars) {
+              const c = NexiAPI.getCharacter(name);
+              if (c) {
+                const marker = name === currentCharacter ? ' ← current' : '';
+                console.log(`  ${color(name, 'bright')}: ${c.description}${color(marker, 'green')}`);
+              }
+            }
+            console.log();
+            break;
+
+          case 'char':
+          case 'character':
+            if (arg) {
+              const char = NexiAPI.getCharacter(arg.toLowerCase());
+              if (char) {
+                nexi.setCharacter(arg.toLowerCase());
+                nexi.clearHistory(); // Clear history when switching characters
+                currentCharacter = arg.toLowerCase();
+                console.log(color(`\n✓ Switched to: ${char.displayName}`, 'green'));
+                console.log(color(`  ${char.description}`, 'dim'));
+                if (char.greeting) {
+                  console.log(color(`\n${char.displayName}: `, 'cyan') + char.greeting);
+                }
+                console.log();
+              } else {
+                console.log(color(`Unknown character: ${arg}. Use /characters to see options.`, 'yellow'));
+              }
+            } else {
+              console.log(color('Usage: /char <character_name>', 'yellow'));
+            }
+            break;
+
+          case 'reset':
+            nexi.resetCharacter();
+            nexi.clearHistory();
+            currentCharacter = 'nexi';
+            console.log(color('✓ Reset to default Nexi', 'green'));
+            break;
+
           case 'mode':
             if (['react', 'chat', 'think'].includes(arg)) {
               nexi.setMode(arg as 'react' | 'chat' | 'think');
@@ -115,6 +177,7 @@ async function main(): Promise<void> {
           case 'stats':
             const stats = nexi.getStats();
             console.log(color('\n📊 Stats:', 'cyan'));
+            console.log(`  Character: ${currentCharacter}`);
             console.log(`  Mode: ${stats.mode}`);
             console.log(`  Mood: ${stats.mood}`);
             console.log(`  Energy: ${stats.energy}`);
@@ -157,21 +220,6 @@ async function main(): Promise<void> {
             console.log(color('✓ Conversation cleared', 'green'));
             break;
 
-          case 'personality':
-            if (arg) {
-              nexi.setPersonality(arg);
-              console.log(color(`✓ Personality set to: ${arg}`, 'green'));
-            } else {
-              console.log(color('Usage: /personality <preset>', 'yellow'));
-            }
-            break;
-
-          case 'presets':
-            const presets = NexiAPI.getPresets();
-            console.log(color('\nAvailable presets:', 'cyan'));
-            console.log(`  ${presets.join(', ')}\n`);
-            break;
-
           default:
             console.log(color(`Unknown command: /${cmd}. Type /help for commands.`, 'yellow'));
         }
@@ -181,7 +229,7 @@ async function main(): Promise<void> {
       }
 
       // Regular chat - stream response
-      process.stdout.write(color('Nexi: ', 'cyan'));
+      process.stdout.write(color(`${getPromptName()}: `, 'cyan'));
 
       try {
         await nexi.chatStream(trimmed, (token) => {

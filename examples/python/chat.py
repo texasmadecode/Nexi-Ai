@@ -18,8 +18,10 @@ except ImportError:
 
 sys.path.insert(0, './python')
 
-from nexi import Nexi, NexiConfig, BehavioralMode, MemoryType
+from nexi import Nexi, NexiConfig, BehavioralMode, MemoryType, get_character, list_characters
 
+
+current_character = 'nexi'
 
 # ANSI colors
 class Colors:
@@ -41,22 +43,44 @@ def color(text: str, c: str) -> str:
 def print_help():
     print(f"""
 {color('Commands:', Colors.BRIGHT)}
-  {color('/help', Colors.CYAN)}        - Show this help
-  {color('/mode <m>', Colors.CYAN)}    - Set mode (react, chat, think)
-  {color('/mood', Colors.CYAN)}        - Show current mood
-  {color('/stats', Colors.CYAN)}       - Show stats
+  {color('/help', Colors.CYAN)}          - Show this help
+  {color('/characters', Colors.CYAN)}    - List available characters
+  {color('/char <name>', Colors.CYAN)}   - Switch character (e.g., /char pirate)
+  {color('/reset', Colors.CYAN)}         - Reset to default Nexi
+  {color('/mode <m>', Colors.CYAN)}      - Set mode (react, chat, think)
+  {color('/mood', Colors.CYAN)}          - Show current mood
+  {color('/stats', Colors.CYAN)}         - Show stats
   {color('/remember <text>', Colors.CYAN)} - Store a memory
   {color('/search <query>', Colors.CYAN)}  - Search memories
-  {color('/clear', Colors.CYAN)}       - Clear conversation history
-  {color('/exit', Colors.CYAN)}        - Exit chat
+  {color('/clear', Colors.CYAN)}         - Clear conversation history
+  {color('/exit', Colors.CYAN)}          - Exit chat
+
+{color('Characters:', Colors.BRIGHT)}
+  nexi       - Default Nexi AI
+  assistant  - Helpful assistant
+  pirate     - Captain Blackbeard
+  wizard     - Gandrix the Wise
+  catgirl    - Miko the catgirl
+  robot      - UNIT-7 sarcastic robot
+  storyteller - The Narrator (D&D style)
+  therapist  - Dr. Sage (supportive listener)
 """)
 
 
+def get_prompt_name() -> str:
+    """Get the display name for the current character"""
+    global current_character
+    char = get_character(current_character)
+    return char.display_name if char else 'Nexi'
+
+
 def main():
+    global current_character
+
     print(color('\n╔════════════════════════════════════════╗', Colors.CYAN))
     print(color('║', Colors.CYAN) + color('        🤖 NEXI AI - Terminal Chat       ', Colors.BRIGHT) + color('║', Colors.CYAN))
     print(color('╚════════════════════════════════════════╝', Colors.CYAN))
-    print(color('Type /help for commands, /exit to quit\n', Colors.DIM))
+    print(color('Type /help for commands, /characters to see roleplay options\n', Colors.DIM))
 
     # Create Nexi instance
     config = NexiConfig(data_dir='./nexi-chat-data-py')
@@ -68,7 +92,8 @@ def main():
         print(color('   Start it with: ollama serve', Colors.DIM))
         sys.exit(1)
 
-    print(color('✓ Connected to Ollama\n', Colors.GREEN))
+    print(color('✓ Connected to Ollama', Colors.GREEN))
+    print(color(f'✓ Character: {current_character}\n', Colors.GREEN))
 
     try:
         while True:
