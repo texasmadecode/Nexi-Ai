@@ -1,5 +1,17 @@
 // Nexi AI - Main Entry Point
 
+// Simple API (recommended for most users)
+export {
+  NexiAPI,
+  createNexi as create,
+  quickChat,
+  NexiAPIConfig,
+  ChatResponse,
+  MemorySearchResult,
+  NexiStats,
+} from './api/index.js';
+
+// Core classes (for advanced usage)
 export { Nexi, ChatOptions, NexiOptions } from './core/nexi.js';
 export { SentimentAnalyzer, SentimentResult } from './core/sentiment.js';
 export {
@@ -19,7 +31,7 @@ export { LLMProvider, LLMProviderConfig, GenerateOptions } from './core/provider
 export { OllamaProvider } from './core/providers/ollama.js';
 export * from './types/index.js';
 
-// Quick start helper
+// Legacy quick start helper (use NexiAPI.create() instead)
 import { Nexi } from './core/nexi.js';
 import { OllamaProvider } from './core/providers/ollama.js';
 import { LLMProvider } from './core/providers/llm.js';
@@ -31,8 +43,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Create a new Nexi instance with default configuration (Ollama backend)
+ * @deprecated Use NexiAPI.create() instead for the new simplified API
  */
-export function createNexi(options?: { dataDir?: string; provider?: LLMProvider }): Nexi {
+export function createNexiLegacy(options?: { dataDir?: string; provider?: LLMProvider }): Nexi {
   dotenv.config();
 
   const provider = options?.provider ?? OllamaProvider.fromEnv();
