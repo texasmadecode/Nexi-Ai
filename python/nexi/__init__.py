@@ -19,6 +19,11 @@ from .client import (
     Memory,
     MemorySearchResult,
     NexiStats,
+    BehavioralMode,
+    MoodState,
+    EnergyLevel,
+    MemoryType,
+    quick_chat,
 )
 
 __version__ = "0.2.0"
@@ -30,4 +35,9 @@ __all__ = [
     "Memory",
     "MemorySearchResult",
     "NexiStats",
+    "BehavioralMode",
+    "MoodState",
+    "EnergyLevel",
+    "MemoryType",
+    "quick_chat",
 ]
