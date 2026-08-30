@@ -57,9 +57,20 @@ export class Nexi {
   private readonly stateManager: StateManager;
   private readonly memoryStore: MemoryStore;
   private readonly sentimentAnalyzer: SentimentAnalyzer;
+  private readonly useSemanticMemory: boolean;
   private personality: PersonalityConfig;
   private customSystemPrompt: string | null = null;
   private conversationHistory: ConversationMessage[] = [];
+
+  private shouldUseSemanticRecall(input: string): boolean {
+    if (!this.useSemanticMemory) return false;
+
+    const trimmed = input.trim();
+    if (trimmed.length < 6) return false;
+    if (/^(?:!|\/)[a-z]/i.test(trimmed)) return false;
+
+    return true;
+  }
 
   constructor(
     config: Partial<NexiConfig> & { dataDir: string },
@@ -69,6 +80,7 @@ export class Nexi {
     this.config = { ...DEFAULT_CONFIG, ...config } as NexiConfig;
     this.provider = provider ?? OllamaProvider.fromEnv();
     this.memoryStore = new MemoryStore(this.config.dataDir);
+    this.useSemanticMemory = process.env.NEXI_USE_SEMANTIC_MEMORY !== 'false';
 
     // Wire up embedding generator for semantic memory search
     this.memoryStore.setEmbeddingGenerator((text) => this.provider.embed(text));
@@ -120,11 +132,11 @@ export class Nexi {
     this.stateManager.recordInteraction();
     this.conversationHistory.push({ role: 'user', content: input, timestamp: new Date() });
 
-    // Use semantic search for better memory recall (falls back to keyword if unavailable)
-    const relevantMemories = await this.memoryStore.findRelevantSemantic(
-      input,
-      this.config.maxRelevantMemories
-    );
+    // Keep semantic memory available for meaningful conversations, but avoid paying the cost on
+    // short messages, commands, or repetitive prompts where keyword memory is enough.
+    const relevantMemories = this.shouldUseSemanticRecall(input)
+      ? await this.memoryStore.findRelevantSemantic(input, this.config.maxRelevantMemories)
+      : this.memoryStore.findRelevant(input, this.config.maxRelevantMemories);
     const state = this.stateManager.getState();
 
     // Build system prompt - use custom if set, otherwise use default

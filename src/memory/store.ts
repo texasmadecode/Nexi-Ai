@@ -27,6 +27,8 @@ function cosineSimilarity(a: number[], b: number[]): number {
 export class MemoryStore {
   private db: Database.Database;
   private embeddingGenerator: ((text: string) => Promise<number[]>) | null = null;
+  private semanticCache = new Map<string, { expiresAt: number; memories: Memory[] }>();
+  private readonly semanticCacheTtlMs = 15000;
 
   constructor(dataDir: string) {
     // Ensure data directory exists
@@ -305,6 +307,12 @@ export class MemoryStore {
       return this.findRelevant(text, limit);
     }
 
+    const cacheKey = `${limit}:${text.trim().toLowerCase()}`;
+    const cached = this.semanticCache.get(cacheKey);
+    if (cached && Date.now() < cached.expiresAt) {
+      return cached.memories;
+    }
+
     let queryEmbedding: number[];
     try {
       queryEmbedding = await this.embeddingGenerator(text);
@@ -313,28 +321,32 @@ export class MemoryStore {
       return this.findRelevant(text, limit);
     }
 
-    // Get all memories with embeddings
+    // Look at recent memories first to avoid scanning the entire DB on every response.
     const rows = this.db
-      .prepare('SELECT * FROM memories WHERE embedding IS NOT NULL')
+      .prepare(
+        'SELECT * FROM memories WHERE embedding IS NOT NULL ORDER BY last_accessed DESC LIMIT 200'
+      )
       .all() as Record<string, unknown>[];
 
-    // Calculate similarity scores
     const scored = rows
       .map((row) => {
-        const embedding = JSON.parse(row.embedding as string) as number[];
-        const similarity = cosineSimilarity(queryEmbedding, embedding);
-        return { row, similarity };
+        try {
+          const embedding = JSON.parse(row.embedding as string) as number[];
+          const similarity = cosineSimilarity(queryEmbedding, embedding);
+          return { row, similarity };
+        } catch {
+          return null;
+        }
       })
-      .filter((item) => item.similarity > 0.3) // Threshold for relevance
+      .filter((item): item is { row: Record<string, unknown>; similarity: number } => !!item)
+      .filter((item) => item.similarity > 0.3)
       .sort((a, b) => b.similarity - a.similarity)
       .slice(0, limit);
 
-    // If no semantic matches, fall back to keyword search
-    if (scored.length === 0) {
-      return this.findRelevant(text, limit);
-    }
+    const memories = scored.length > 0 ? scored.map((item) => this.rowToMemory(item.row)) : this.findRelevant(text, limit);
+    this.semanticCache.set(cacheKey, { expiresAt: Date.now() + this.semanticCacheTtlMs, memories });
 
-    return scored.map((item) => this.rowToMemory(item.row));
+    return memories;
   }
 
   /**
