@@ -7,3 +7,5 @@ data/
 coverage/
 test-data-*/
 .claude/
+.vscode/
+.DS_Store
