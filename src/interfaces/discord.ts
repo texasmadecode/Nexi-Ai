@@ -83,6 +83,14 @@ async function getPromptFromMessage(message: Message, prefix: string, mode: stri
 async function createDiscordBot() {
   const { token, mode, prefix, allowedGuild } = await resolveDiscordConfig();
   const provider = OllamaProvider.fromEnv();
+  const ollamaHost = process.env.OLLAMA_HOST || 'http://localhost:11434';
+  const ollamaIsAvailable = await provider.isAvailable();
+  console.log('Ollama check:', { host: ollamaHost, available: ollamaIsAvailable });
+
+  if (!ollamaIsAvailable) {
+    console.warn('Ollama is not reachable. Start it with "ollama serve" and confirm the host is reachable.');
+  }
+
   const nexi = new Nexi({ dataDir: process.env.NEXI_DATA_DIR || './data' }, provider);
 
   const client = new Client({
@@ -104,18 +112,31 @@ async function createDiscordBot() {
   client.on(Events.MessageCreate, async (message: Message) => {
     if (message.author.bot) return;
 
+    console.log('Discord message received:', {
+      author: message.author.tag,
+      guild: message.guild?.name ?? 'DM',
+      content: message.content,
+      mode,
+    });
+
     if (mode === 'guild' && allowedGuild && message.guildId !== allowedGuild) return;
     if (mode === 'guild' && !message.guild) return;
     if (mode === 'dm' && message.guild && !message.content.startsWith(prefix)) return;
 
     const prompt = await getPromptFromMessage(message, prefix, mode);
-    if (!prompt) return;
+    if (!prompt) {
+      console.log('Message ignored by mode filter:', { mode, guild: !!message.guild, prefix });
+      return;
+    }
+
+    console.log('Prompt sent to Nexi:', prompt);
 
     try {
       const channel = message.channel;
       if ('send' in channel && typeof channel.send === 'function') {
         await channel.send('Thinking...');
         const reply = await nexi.chat(prompt);
+        console.log('Nexi reply generated:', { replyLength: reply.length });
         await channel.send(reply);
       }
     } catch (error) {
