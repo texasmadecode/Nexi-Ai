@@ -3,6 +3,7 @@ import { Client, Events, GatewayIntentBits, Message } from 'discord.js';
 import readline from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
 import { Nexi } from '../core/nexi.js';
+import { CHARACTER_PRESETS } from '../core/characters.js';
 import { OllamaProvider } from '../core/providers/ollama.js';
 
 dotenv.config();
@@ -93,6 +94,25 @@ async function createDiscordBot() {
 
   const nexi = new Nexi({ dataDir: process.env.NEXI_DATA_DIR || './data' }, provider);
 
+  const characterNames = Object.keys(CHARACTER_PRESETS);
+
+  function applyCharacter(name: string): string | null {
+    const normalized = name.toLowerCase();
+    const chosen = CHARACTER_PRESETS[normalized];
+    if (!chosen) {
+      return null;
+    }
+
+    if (chosen.systemPrompt) {
+      nexi.setSystemPrompt(chosen.systemPrompt);
+    } else {
+      nexi.setSystemPrompt(null);
+    }
+
+    nexi.setPersonality(chosen.name);
+    return chosen.displayName;
+  }
+
   const client = new Client({
     intents: [
       GatewayIntentBits.Guilds,
@@ -127,6 +147,65 @@ async function createDiscordBot() {
     if (!prompt) {
       console.log('Message ignored by mode filter:', { mode, guild: !!message.guild, prefix });
       return;
+    }
+
+    const commandTokens = prompt.split(/\s+/);
+    const commandName = commandTokens[0].toLowerCase();
+    const directCharacter = commandTokens.length > 1 ? commandTokens[0].toLowerCase() : null;
+
+    if (commandName === 'help' || commandName === 'commands') {
+      const available = characterNames.join(', ');
+      if ('send' in message.channel && typeof message.channel.send === 'function') {
+        await message.channel.send(`Character commands: ${available}. Use !nexi <name> to switch, or !nexi list.`);
+      }
+      return;
+    }
+
+    if (commandName === 'list' || commandName === 'characters') {
+      const available = characterNames.join(', ');
+      if ('send' in message.channel && typeof message.channel.send === 'function') {
+        await message.channel.send(`Available characters: ${available}`);
+      }
+      return;
+    }
+
+    if (commandName === 'reset' || commandName === 'default') {
+      applyCharacter('nexi');
+      if ('send' in message.channel && typeof message.channel.send === 'function') {
+        await message.channel.send('Switched back to the default Nexi personality.');
+      }
+      return;
+    }
+
+    if (commandName === 'character' || commandName === 'set' || commandName === 'switch') {
+      const requested = commandTokens[1]?.toLowerCase();
+      if (!requested) {
+        if ('send' in message.channel && typeof message.channel.send === 'function') {
+          await message.channel.send(`Usage: !nexi ${commandName} <character> | available: ${characterNames.join(', ')}`);
+        }
+        return;
+      }
+
+      const displayName = applyCharacter(requested);
+      if (!displayName) {
+        if ('send' in message.channel && typeof message.channel.send === 'function') {
+          await message.channel.send(`Unknown character: ${requested}. Available: ${characterNames.join(', ')}`);
+        }
+        return;
+      }
+
+      if ('send' in message.channel && typeof message.channel.send === 'function') {
+        await message.channel.send(`Switched to ${displayName}.`);
+      }
+      return;
+    }
+
+    if (directCharacter && CHARACTER_PRESETS[directCharacter]) {
+      const displayName = applyCharacter(directCharacter);
+      if (displayName && 'send' in message.channel && typeof message.channel.send === 'function') {
+        await message.channel.send(`Switched to ${displayName}.`);
+        return;
+      }
     }
 
     console.log('Prompt sent to Nexi:', prompt);
