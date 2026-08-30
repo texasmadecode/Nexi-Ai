@@ -143,8 +143,14 @@ async function createDiscordBot() {
   await client.login(token);
 }
 
-createDiscordBot().catch((error) => {
+createDiscordBot().catch((error: unknown) => {
   console.error('Failed to start Discord bot:', error);
+
+  if (error instanceof Error && error.message.includes('disallowed intents')) {
+    console.error('Discord rejected the bot intents. In the Discord Developer Portal, enable the Message Content Intent for this bot.');
+    console.error('If you do not want to read message content, remove MessageContent from the intent list and use slash commands instead.');
+  }
+
   process.exit(1);
 });
 
