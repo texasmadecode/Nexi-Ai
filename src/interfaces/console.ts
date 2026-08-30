@@ -128,8 +128,9 @@ async function chat(input: string): Promise<void> {
       onToken: (token: string) => process.stdout.write(white(token)),
     });
     log('\n');
-  } catch (e: any) {
-    log(red(`\nError: ${e.message}\n`));
+  } catch (e: unknown) {
+    const error = e instanceof Error ? e : new Error(String(e));
+    log(red(`\nError: ${error.message}\n`));
   }
 }
 
@@ -173,7 +174,7 @@ async function main(): Promise<void> {
 
   const loop = (): void => {
     showState();
-    rl.question(green('You: '), async (input) => {
+    rl.question(green('You: '), async (input: string) => {
       const trimmed = input.trim();
       if (!trimmed) {
         loop();

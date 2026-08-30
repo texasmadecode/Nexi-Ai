@@ -1,8 +1,10 @@
 {
   "compilerOptions": {
+    "ignoreDeprecations": "5.0",
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "node",
+    "types": ["node"],
     "esModuleInterop": true,
     "strict": true,
     "skipLibCheck": true,

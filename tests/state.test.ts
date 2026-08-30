@@ -171,7 +171,7 @@ describe('StateManager', () => {
       stateManager.shiftMood('focused', 2);
       stateManager.recordInteraction();
 
-      const json = stateManager.toJSON() as any;
+      const json = stateManager.toJSON() as Record<string, unknown>;
 
       expect(json.mode).toBe('think');
       expect(json.mood).toBe('focused');

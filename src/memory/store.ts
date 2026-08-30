@@ -158,7 +158,7 @@ export class MemoryStore {
    */
   query(query: MemoryQuery): Memory[] {
     let sql = 'SELECT * FROM memories WHERE 1=1';
-    const params: any[] = [];
+    const params: (string | number)[] = [];
 
     if (query.type) {
       sql += ' AND type = ?';
@@ -191,7 +191,7 @@ export class MemoryStore {
     }
 
     const stmt = this.db.prepare(sql);
-    const rows = stmt.all(...params) as any[];
+    const rows = stmt.all(...params) as Record<string, unknown>[];
 
     // Update access count and last_accessed for retrieved memories
     const updateStmt = this.db.prepare(`
@@ -241,7 +241,7 @@ export class MemoryStore {
     `;
 
     const stmt = this.db.prepare(sql);
-    const rows = stmt.all(...params, limit) as any[];
+    const rows = stmt.all(...params, limit) as Record<string, unknown>[];
 
     return rows.map((row) => this.rowToMemory(row));
   }
@@ -316,12 +316,12 @@ export class MemoryStore {
     // Get all memories with embeddings
     const rows = this.db
       .prepare('SELECT * FROM memories WHERE embedding IS NOT NULL')
-      .all() as any[];
+      .all() as Record<string, unknown>[];
 
     // Calculate similarity scores
     const scored = rows
       .map((row) => {
-        const embedding = JSON.parse(row.embedding) as number[];
+        const embedding = JSON.parse(row.embedding as string) as number[];
         const similarity = cosineSimilarity(queryEmbedding, embedding);
         return { row, similarity };
       })
@@ -342,7 +342,7 @@ export class MemoryStore {
    */
   get(id: string): Memory | null {
     const stmt = this.db.prepare('SELECT * FROM memories WHERE id = ?');
-    const row = stmt.get(id) as any;
+    const row = stmt.get(id) as Record<string, unknown> | undefined;
 
     if (!row) return null;
 
@@ -365,7 +365,7 @@ export class MemoryStore {
     >
   ): boolean {
     const setClauses: string[] = [];
-    const params: any[] = [];
+    const params: (string | number)[] = [];
 
     if (updates.content !== undefined) {
       setClauses.push('content = ?');
@@ -434,12 +434,12 @@ export class MemoryStore {
   ): Array<{ original: Memory; duplicate: Memory; similarity: number }> {
     const allMemories = this.db
       .prepare('SELECT * FROM memories ORDER BY created_at ASC')
-      .all() as any[];
+      .all() as Record<string, unknown>[];
     const duplicates: Array<{ original: Memory; duplicate: Memory; similarity: number }> = [];
 
     for (let i = 0; i < allMemories.length; i++) {
       for (let j = i + 1; j < allMemories.length; j++) {
-        const similarity = this.textSimilarity(allMemories[i].content, allMemories[j].content);
+        const similarity = this.textSimilarity(allMemories[i].content as string, allMemories[j].content as string);
 
         if (similarity >= similarityThreshold) {
           duplicates.push({
@@ -506,7 +506,7 @@ export class MemoryStore {
   /**
    * Save arbitrary state
    */
-  saveState(key: string, value: any): void {
+  saveState(key: string, value: unknown): void {
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO state (key, value, updated_at)
       VALUES (?, ?, ?)
@@ -529,7 +529,7 @@ export class MemoryStore {
    * Get memory statistics
    */
   getStats(): { total: number; byType: Record<string, number>; avgImportance: number } {
-    const total = (this.db.prepare('SELECT COUNT(*) as count FROM memories').get() as any).count;
+    const total = (this.db.prepare('SELECT COUNT(*) as count FROM memories').get() as { count: number }).count;
 
     const byTypeRows = this.db
       .prepare(
@@ -544,7 +544,7 @@ export class MemoryStore {
       byType[row.type] = row.count;
     });
 
-    const avgResult = this.db.prepare('SELECT AVG(importance) as avg FROM memories').get() as any;
+    const avgResult = this.db.prepare('SELECT AVG(importance) as avg FROM memories').get() as { avg: number | null };
     const avgImportance = avgResult.avg ?? 0;
 
     return { total, byType, avgImportance };
@@ -553,19 +553,19 @@ export class MemoryStore {
   /**
    * Convert database row to Memory object
    */
-  private rowToMemory(row: any): Memory {
+  private rowToMemory(row: Record<string, unknown>): Memory {
     return {
-      id: row.id,
+      id: row.id as string,
       type: row.type as MemoryType,
-      content: row.content,
-      context: row.context ?? undefined,
-      importance: row.importance,
-      emotional_weight: row.emotional_weight,
-      created_at: new Date(row.created_at),
-      last_accessed: new Date(row.last_accessed),
-      access_count: row.access_count,
-      tags: JSON.parse(row.tags || '[]'),
-      related_user: row.related_user ?? undefined,
+      content: row.content as string,
+      context: (row.context as string | null) ?? undefined,
+      importance: row.importance as number,
+      emotional_weight: row.emotional_weight as number,
+      created_at: new Date(row.created_at as string | number),
+      last_accessed: new Date(row.last_accessed as string | number),
+      access_count: row.access_count as number,
+      tags: JSON.parse((row.tags as string) || '[]'),
+      related_user: (row.related_user as string | null) ?? undefined,
     };
   }
 
