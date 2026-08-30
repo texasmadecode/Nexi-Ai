@@ -30,6 +30,32 @@ npm run chat
 
 This will install dependencies automatically if they are missing.
 
+## Discord Bot Mode
+
+You can also run Nexi as a Discord bot runtime.
+
+```bash
+npm run discord
+```
+
+On first launch, it will ask for:
+- your Discord bot token
+- the runtime mode (`dm`, `guild`, or `both`)
+- the command prefix
+- the allowed guild ID when using guild mode
+
+A Docker setup is also included:
+
+```bash
+docker build -f Dockerfile.discord -t nexi-ai-discord .
+```
+
+or
+
+```bash
+docker compose -f docker-compose.discord.yml up --build
+```
+
 ## Features
 
 - **Persistent Memory** - Nexi remembers important things across sessions

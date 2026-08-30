@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  nexi-discord:
+    build:
+      context: .
+      dockerfile: Dockerfile.discord
+    container_name: nexi-ai-discord
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - DISCORD_MODE=${DISCORD_MODE:-dm}
+      - DISCORD_PREFIX=${DISCORD_PREFIX:-!nexi}
+      - DISCORD_ALLOWED_GUILD_ID=${DISCORD_ALLOWED_GUILD_ID:-}
+      - OLLAMA_HOST=${OLLAMA_HOST:-http://host.docker.internal:11434}
+      - NEXI_MODEL_DEFAULT=${NEXI_MODEL_DEFAULT:-llama3.1:8b}
+      - NEXI_DATA_DIR=/app/data
+    volumes:
+      - nexi-discord-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  nexi-discord-data:

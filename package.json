@@ -10,6 +10,9 @@
     "start": "npm run bootstrap && node dist/index.js",
     "dev": "npm run bootstrap && tsx src/index.ts",
     "chat": "npm run bootstrap && tsx src/interfaces/console.ts",
+    "discord": "npm run bootstrap && tsx src/interfaces/discord.ts",
+    "discord:build": "npm run bootstrap && tsc && node dist/interfaces/discord.js",
+    "docker:discord": "docker build -f Dockerfile.discord -t nexi-ai-discord .",
     "test": "npm run bootstrap && vitest run --exclude tests/ollama.test.ts",
     "test:watch": "npm run bootstrap && vitest --exclude tests/ollama.test.ts",
     "test:coverage": "npm run bootstrap && vitest run --coverage --exclude tests/ollama.test.ts",
@@ -32,6 +35,7 @@
   "dependencies": {
     "better-sqlite3": "^11.6.0",
     "chalk": "^5.3.0",
+    "discord.js": "^14.18.0",
     "dotenv": "^16.4.7",
     "readline": "^1.3.0",
     "uuid": "^11.0.3"
