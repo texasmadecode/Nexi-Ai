@@ -22,17 +22,13 @@ ollama pull llama3.1:8b
 ollama serve
 ```
 
-### 4. Install dependencies
-
-```bash
-npm install
-```
-
-### 5. Start chatting
+### 4. Start chatting
 
 ```bash
 npm run chat
 ```
+
+This will install dependencies automatically if they are missing.
 
 ## Features
 
